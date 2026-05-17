@@ -1030,10 +1030,11 @@ let currentProfileFile = null;
 async function loadProfileSettings() {
     try {
         const doc = await db.collection('settings').doc('profile').get();
+        const form = document.getElementById('profileForm');
+        if (!form) return;
+
         if (doc.exists) {
             const data = doc.data();
-            const form = document.getElementById('profileForm');
-            if (!form) return;
 
             form.prName.value = data.name || 'Anuhas Nethsara';
             form.prAlias.value = data.alias || 'KenGSL / KenG SL';
@@ -1056,6 +1057,24 @@ async function loadProfileSettings() {
                 currentProfileImageBase64 = data.avatarBase64;
                 document.getElementById('profileAvatarPreview').src = data.avatarBase64;
             }
+        } else {
+            // Fill with initial defaults if database document doesn't exist yet
+            form.prName.value = 'Anuhas Nethsara';
+            form.prAlias.value = 'KenGSL / KenG SL';
+            form.prRoles.value = 'Graphic Designer, Netch Engineer, Web Developer, Content Creator';
+            form.prHeroDesc.value = "A passionate creator based in Sri Lanka. From high-impact graphic design to premium Netch VPN services and modern web development, I build digital experiences that perform.";
+            
+            form.prLocation.value = "Sri Lanka 🇱🇰";
+            form.prLanguages.value = "English, Sinhala";
+            form.prSkills.value = "Photoshop, Illustrator, Next.js / React, V2Ray / Netch, Premiere Pro";
+
+            form.prBio1.value = "I'm a multi-disciplinary freelancer and digital entrepreneur based in Sri Lanka. I started as a graphic designer specializing in YouTube thumbnails and brand visuals, helping creators increase their click-through rates.";
+            form.prBio2.value = "Since then, my passion for technology has expanded my skill set. I now engineer high-speed V2Ray/Netch VPN solutions through ShiftLK Netch, build modern web applications using Next.js and Tailwind CSS, and produce engaging video content.";
+            
+            form.prStatClients.value = '50+';
+            form.prStatVpn.value = '500+';
+            form.prStatYears.value = '2+';
+            form.prStatProjects.value = '18+';
         }
     } catch (err) {
         console.error('Error loading profile settings:', err);
@@ -1379,10 +1398,11 @@ async function saveServiceItem(e) {
 async function loadGeneralSettings() {
     try {
         const doc = await db.collection('settings').doc('general').get();
+        const form = document.getElementById('generalSettingsForm');
+        if (!form) return;
+
         if (doc.exists) {
             const data = doc.data();
-            const form = document.getElementById('generalSettingsForm');
-            if (!form) return;
 
             form.seoTitle.value = data.seoTitle || '';
             form.seoDesc.value = data.seoDesc || '';
@@ -1396,6 +1416,20 @@ async function loadGeneralSettings() {
             form.tiktok.value = data.tiktok || '';
             form.discord.value = data.discord || '';
             form.email.value = data.email || '';
+        } else {
+            // Sensible initial defaults matching index.html
+            form.seoTitle.value = 'Anuhas Nethsara | Graphic Designer, Content Creator, Web Developer & Netch Engineer';
+            form.seoDesc.value = 'Anuhas Nethsara (KenGSL) is a multi-disciplinary freelancer based in Sri Lanka specializing in high-impact Graphic Design, Netch VPN Services, Web Development, and Content Creation.';
+            form.seoKeywords.value = 'Anuhas Nethsara, KenGSL, Sri Lankan graphic designer, YouTube thumbnail designer, ShiftLK Netch, V2Ray VPN Sri Lanka, Web Developer Next.js, content creator, YouTube creator';
+            form.seoCanonical.value = 'https://www.youtube.com/@Sl_KenG';
+            form.seoOgImage.value = 'https://www.instagram.com/_heartless.deneth';
+            
+            form.whatsapp.value = '+94788246118';
+            form.instagram.value = 'https://www.instagram.com/_heartless.deneth';
+            form.youtube.value = 'https://www.youtube.com/@Sl_KenG';
+            form.tiktok.value = 'https://www.tiktok.com/@not_ur_anuhas';
+            form.discord.value = 'https://discord.gg/w6UNr4MK4h';
+            form.email.value = '';
         }
     } catch (err) {
         console.error('Error loading general settings:', err);
