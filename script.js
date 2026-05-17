@@ -335,15 +335,21 @@ function initRippleEffect() {
 }
 
 // ===== Role Text Typing Animation =====
-function initRoleTyping() {
-    const roles = ["Graphic Designer", "Netch Engineer", "Web Developer", "Content Creator"];
+let roleTypingInterval = null;
+function initRoleTyping(dynamicRoles = null) {
+    const defaultRoles = ["Graphic Designer", "Netch Engineer", "Web Developer", "Content Creator"];
+    const roles = (dynamicRoles && dynamicRoles.length > 0) ? dynamicRoles : defaultRoles;
+    
     const roleTextEl = document.getElementById('role-text');
     if (!roleTextEl) return;
     
     let currentRoleIndex = 0;
+    roleTextEl.textContent = roles[currentRoleIndex]; // set initial
+    
+    if (roleTypingInterval) clearInterval(roleTypingInterval);
     
     // Cycle the role every 3 seconds (sync with the CSS animation)
-    setInterval(() => {
+    roleTypingInterval = setInterval(() => {
         currentRoleIndex = (currentRoleIndex + 1) % roles.length;
         roleTextEl.textContent = roles[currentRoleIndex];
         
@@ -352,6 +358,71 @@ function initRoleTyping() {
         roleTextEl.offsetHeight; /* trigger reflow */
         roleTextEl.style.animation = null; 
     }, 3000);
+}
+
+// ===== Dynamic Site Config Fetching =====
+function fetchSiteConfig() {
+    if (!window.db) return; // Wait for firebase to load
+    db.collection('settings').doc('profile').get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Name & Alias
+            if (data.name) {
+                const nameHero = document.getElementById('profile-name-hero');
+                const nameAbout = document.getElementById('profile-name-about');
+                if (nameHero) nameHero.textContent = data.name;
+                if (nameAbout) nameAbout.textContent = data.name;
+            }
+            if (data.alias) {
+                const aliasAbout = document.getElementById('profile-alias-about');
+                if (aliasAbout) aliasAbout.textContent = data.alias;
+            }
+            
+            // Bio Paragraphs
+            if (data.bio1) {
+                const bio1 = document.getElementById('profile-bio-1');
+                if (bio1) bio1.textContent = data.bio1;
+            }
+            if (data.bio2) {
+                const bio2 = document.getElementById('profile-bio-2');
+                if (bio2) bio2.textContent = data.bio2;
+            }
+            
+            // Stats
+            if (data.statClients) {
+                const statClients = document.getElementById('stat-clients-value');
+                if (statClients) statClients.textContent = data.statClients;
+            }
+            if (data.statVpn) {
+                const statVpn = document.getElementById('stat-vpn-value');
+                if (statVpn) statVpn.textContent = data.statVpn;
+            }
+            if (data.statYears) {
+                const statYears = document.getElementById('stat-years-value');
+                if (statYears) statYears.textContent = data.statYears;
+            }
+            if (data.statProjects) {
+                const statProjects = document.getElementById('stat-projects-value');
+                if (statProjects) statProjects.textContent = data.statProjects;
+            }
+            
+            // Avatars
+            if (data.avatarBase64) {
+                const avatarHero = document.getElementById('profile-avatar-hero');
+                const avatarAbout = document.getElementById('profile-avatar-about');
+                if (avatarHero) avatarHero.src = data.avatarBase64;
+                if (avatarAbout) avatarAbout.src = data.avatarBase64;
+            }
+            
+            // Roles
+            if (data.roles && Array.isArray(data.roles) && data.roles.length > 0) {
+                initRoleTyping(data.roles);
+            }
+        }
+    }).catch(err => {
+        console.error("Error fetching profile config:", err);
+    });
 }
 
 // ===== Single DOMContentLoaded — All Initialization =====
@@ -382,4 +453,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileMenuClose();
     initRippleEffect();
     initRoleTyping();
+
+    // Fetch dynamic site config
+    setTimeout(() => {
+        if (window.db) fetchSiteConfig();
+    }, 100);
 });

@@ -93,6 +93,7 @@ function showDashboard(user) {
 
     loadPortfolioItems();
     loadTestimonials();
+    loadProfileSettings();
     if (isPrimaryAdmin) loadAdminUsers();
 }
 
@@ -111,6 +112,8 @@ function switchTab(tab) {
 
     document.getElementById('portfolioContent').style.display = tab === 'portfolio' ? 'block' : 'none';
     document.getElementById('testimonialsContent').style.display = tab === 'testimonials' ? 'block' : 'none';
+    const profileContent = document.getElementById('profileContent');
+    if (profileContent) profileContent.style.display = tab === 'profile' ? 'block' : 'none';
     const usersContent = document.getElementById('usersContent');
     if (usersContent) usersContent.style.display = tab === 'users' ? 'block' : 'none';
 }
@@ -738,4 +741,148 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.modal-overlay.active').forEach(m => closeModal(m.id));
         }
     });
+
+    // Handle Profile Image drag and drop
+    const profileZone = document.getElementById('profileUploadDropZone');
+    if (profileZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            profileZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            profileZone.addEventListener(eventName, () => profileZone.classList.add('dragover'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            profileZone.addEventListener(eventName, () => profileZone.classList.remove('dragover'), false);
+        });
+        profileZone.addEventListener('drop', e => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                const input = document.getElementById('profileImageInput');
+                input.files = files;
+                handleProfileImageUpload(input);
+            }
+        }, false);
+    }
 });
+
+// ===== PROFILE SETTINGS =====
+let currentProfileImageBase64 = null;
+let currentProfileFile = null;
+
+async function loadProfileSettings() {
+    try {
+        const doc = await db.collection('settings').doc('profile').get();
+        if (doc.exists) {
+            const data = doc.data();
+            const form = document.getElementById('profileForm');
+            if (!form) return;
+
+            form.prName.value = data.name || 'Anuhas Nethsara';
+            form.prAlias.value = data.alias || 'KenGSL / KenG SL';
+            form.prRoles.value = (data.roles || ['Graphic Designer', 'Netch Engineer', 'Web Developer', 'Content Creator']).join(', ');
+            
+            form.prBio1.value = data.bio1 || "I'm a multi-disciplinary freelancer and digital entrepreneur based in Sri Lanka. I started as a graphic designer specializing in YouTube thumbnails and brand visuals, helping creators increase their click-through rates.";
+            form.prBio2.value = data.bio2 || "Since then, my passion for technology has expanded my skill set. I now engineer high-speed V2Ray/Netch VPN solutions through ShiftLK Netch, build modern web applications using Next.js and Tailwind CSS, and produce engaging video content.";
+            
+            form.prStatClients.value = data.statClients || '50+';
+            form.prStatVpn.value = data.statVpn || '500+';
+            form.prStatYears.value = data.statYears || '2+';
+            form.prStatProjects.value = data.statProjects || '18+';
+
+            if (data.avatarBase64) {
+                currentProfileImageBase64 = data.avatarBase64;
+                document.getElementById('profileAvatarPreview').src = data.avatarBase64;
+            }
+        }
+    } catch (err) {
+        console.error('Error loading profile settings:', err);
+        showToast('Error loading profile settings', 'error');
+    }
+}
+
+async function saveProfileSettings(e) {
+    e.preventDefault();
+    const form = document.getElementById('profileForm');
+    const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const rolesArr = form.prRoles.value.split(',').map(r => r.trim()).filter(r => r.length > 0);
+
+    const data = {
+        name: form.prName.value.trim(),
+        alias: form.prAlias.value.trim(),
+        roles: rolesArr,
+        bio1: form.prBio1.value.trim(),
+        bio2: form.prBio2.value.trim(),
+        statClients: form.prStatClients.value.trim(),
+        statVpn: form.prStatVpn.value.trim(),
+        statYears: form.prStatYears.value.trim(),
+        statProjects: form.prStatProjects.value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (currentProfileImageBase64) {
+        data.avatarBase64 = currentProfileImageBase64;
+    }
+
+    try {
+        await db.collection('settings').doc('profile').set(data, { merge: true });
+        showToast('Profile settings saved successfully!', 'success');
+    } catch (err) {
+        showToast('Error saving profile: ' + err.message, 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function handleProfileImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+    }
+
+    currentProfileFile = file;
+    await processProfileImage(file);
+}
+
+async function recompressProfileImage() {
+    if (!currentProfileFile) return;
+    await processProfileImage(currentProfileFile);
+}
+
+async function processProfileImage(file) {
+    const qualityStr = document.getElementById('profileQualitySlider').value;
+    const quality = parseFloat(qualityStr);
+    
+    document.getElementById('profileUploadDropZone').innerHTML = '<div class="compress-loading"><i class="fas fa-spinner fa-spin"></i> Processing...</div>';
+    
+    try {
+        const compressedBase64 = await compressImage(file, quality, 400); // 400px max width for avatar
+        currentProfileImageBase64 = compressedBase64;
+        document.getElementById('profileAvatarPreview').src = compressedBase64;
+        
+        // Restore drop zone
+        document.getElementById('profileUploadDropZone').innerHTML = `
+            <i class="fas fa-check-circle" style="color: #10b981;"></i>
+            <p style="color: #10b981;">Avatar uploaded successfully</p>
+            <p style="font-size:0.75rem; color:var(--text-muted)">Click to change</p>
+        `;
+    } catch (err) {
+        showToast('Error processing image: ' + err.message, 'error');
+        document.getElementById('profileUploadDropZone').innerHTML = `
+            <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+            <p style="color: #ef4444;">Upload failed</p>
+            <p style="font-size:0.75rem; color:var(--text-muted)">Click to try again</p>
+        `;
+    }
+}
