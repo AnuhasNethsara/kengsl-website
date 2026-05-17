@@ -216,7 +216,6 @@
                 <button class="admin-tab" data-tab="coding" onclick="switchTab('coding')"><i class="fas fa-code"></i>&nbsp; Coding Projects</button>
                 <button class="admin-tab" data-tab="services" onclick="switchTab('services')"><i class="fas fa-hand-holding-heart"></i>&nbsp; Services</button>
                 <button class="admin-tab" data-tab="testimonials" onclick="switchTab('testimonials')"><i class="fas fa-quote-right"></i>&nbsp; Testimonials</button>
-                <button class="admin-tab" data-tab="profile" onclick="switchTab('profile')"><i class="fas fa-user-cog"></i>&nbsp; Profile</button>
                 <button class="admin-tab" data-tab="users" onclick="switchTab('users')" style="display:none;"><i class="fas fa-users"></i>&nbsp; Users</button>
             </div>
 
@@ -302,107 +301,6 @@
                 </div>
             </div>
 
-            <!-- Profile Settings Content -->
-            <div id="profileContent" style="display:none">
-                <div class="section-bar">
-                    <h2 style="font-size:1.3rem">Profile Settings</h2>
-                </div>
-                <div class="admin-card" style="padding: 24px; max-width: 800px; margin: 0 auto;">
-                    <form id="profileForm" onsubmit="saveProfileSettings(event)">
-                        <!-- Avatar Upload -->
-                        <div class="form-group" style="margin-bottom: 24px;">
-                            <label class="form-label">Profile Avatar</label>
-                            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
-                                <img id="profileAvatarPreview" src="https://placehold.co/150x150/141419/71717a?text=Avatar" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-1);">
-                                <div style="flex: 1; min-width: 250px;">
-                                    <div class="upload-zone" id="profileUploadDropZone" onclick="document.getElementById('profileImageInput').click()" style="padding: 15px; margin-bottom: 8px;">
-                                        <i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem;"></i>
-                                        <p style="font-size: 0.85rem;">Click to upload avatar</p>
-                                    </div>
-                                    <input type="file" id="profileImageInput" accept="image/*" style="display:none" onchange="handleProfileImageUpload(this)">
-                                    <div class="quality-row">
-                                        <label>Quality:</label>
-                                        <input type="range" class="quality-slider" id="profileQualitySlider" min="0.3" max="0.95" step="0.05" value="0.75" oninput="document.getElementById('profileQualityVal').textContent=Math.round(this.value*100)+'%'" onchange="recompressProfileImage()">
-                                        <span class="quality-val" id="profileQualityVal">75%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">Name</label><input type="text" name="prName" class="form-input" placeholder="e.g. Anuhas Nethsara" required></div>
-                            <div class="form-group"><label class="form-label">Alias</label><input type="text" name="prAlias" class="form-input" placeholder="e.g. KenGSL / KenG SL"></div>
-                        </div>
-                        <div class="form-group"><label class="form-label">Typewriter Roles (comma separated)</label><input type="text" name="prRoles" class="form-input" placeholder="Graphic Designer, Web Developer, ..."></div>
-                        <div class="form-group"><label class="form-label">Hero Description</label><textarea name="prHeroDesc" class="form-input" placeholder="A passionate creator based in Sri Lanka..." style="min-height: 70px;"></textarea></div>
-                        
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">Location</label><input type="text" name="prLocation" class="form-input" placeholder="e.g. Sri Lanka 🇱🇰"></div>
-                            <div class="form-group"><label class="form-label">Languages</label><input type="text" name="prLanguages" class="form-input" placeholder="e.g. English, Sinhala"></div>
-                        </div>
-
-                        <div class="form-group"><label class="form-label">Skills tags (comma separated)</label><input type="text" name="prSkills" class="form-input" placeholder="Photoshop, Illustrator, Next.js, V2Ray / Netch, Premiere Pro"></div>
-                        
-                        <div class="form-group"><label class="form-label">Bio Paragraph 1</label><textarea name="prBio1" class="form-input" placeholder="I'm a multi-disciplinary freelancer..." style="min-height: 80px;"></textarea></div>
-                        <div class="form-group"><label class="form-label">Bio Paragraph 2</label><textarea name="prBio2" class="form-input" placeholder="Since then, my passion for technology..." style="min-height: 80px;"></textarea></div>
-                        
-                        <h3 style="margin: 24px 0 16px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Stats</h3>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">Happy Clients</label><input type="text" name="prStatClients" class="form-input" placeholder="50+"></div>
-                            <div class="form-group"><label class="form-label">VPN Users</label><input type="text" name="prStatVpn" class="form-input" placeholder="500+"></div>
-                            <div class="form-group"><label class="form-label">Years Exp</label><input type="text" name="prStatYears" class="form-input" placeholder="2+"></div>
-                            <div class="form-group"><label class="form-label">Projects</label><input type="text" name="prStatProjects" class="form-input" placeholder="18+"></div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;"><i class="fas fa-save"></i> Save Profile Settings</button>
-                    </form>
-                </div>
-
-                <!-- General SEO & Social Links Settings Form -->
-                <div class="admin-card" style="padding: 24px; max-width: 800px; margin: 30px auto 0;">
-                    <h2 style="font-size:1.2rem; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-globe"></i> SEO & Social Settings</h2>
-                    <form id="generalSettingsForm" onsubmit="saveGeneralSettings(event)">
-                        <div class="form-group">
-                            <label class="form-label">SEO Page Title</label>
-                            <input type="text" name="seoTitle" class="form-input" placeholder="e.g. Anuhas Nethsara | Graphic Designer">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">SEO Meta Description</label>
-                            <textarea name="seoDesc" class="form-input" placeholder="Anuhas Nethsara (KenGSL) is a freelancer..." style="min-height: 70px;"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">SEO Meta Keywords</label>
-                            <input type="text" name="seoKeywords" class="form-input" placeholder="Anuhas Nethsara, KenGSL, YouTube thumbnail designer">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">SEO Canonical URL</label>
-                                <input type="url" name="seoCanonical" class="form-input" placeholder="https://...">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">SEO Share Image (Open Graph)</label>
-                                <input type="url" name="seoOgImage" class="form-input" placeholder="https://...">
-                            </div>
-                        </div>
-
-                        <h3 style="margin: 24px 0 16px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Social & Contact Links</h3>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">WhatsApp Number / Link</label><input type="text" name="whatsapp" class="form-input" placeholder="e.g. +94788246118"></div>
-                            <div class="form-group"><label class="form-label">Instagram URL</label><input type="url" name="instagram" class="form-input" placeholder="https://instagram.com/..."></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">YouTube Channel URL</label><input type="url" name="youtube" class="form-input" placeholder="https://youtube.com/..."></div>
-                            <div class="form-group"><label class="form-label">TikTok Profile URL</label><input type="url" name="tiktok" class="form-input" placeholder="https://tiktok.com/..."></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">Discord Invite URL</label><input type="url" name="discord" class="form-input" placeholder="https://discord.gg/..."></div>
-                            <div class="form-group"><label class="form-label">Public Contact Email</label><input type="email" name="email" class="form-input" placeholder="e.g. name@domain.com"></div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;"><i class="fas fa-save"></i> Save SEO & Social Settings</button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 
