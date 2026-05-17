@@ -302,6 +302,12 @@
                     </div>
                 </div>
             </div>
+            
+            <div style="text-align: center; margin-top: 50px;" class="animate-on-scroll delay-2">
+                <button onclick="signInForReview()" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem;">
+                    <i class="fas fa-comment-dots" style="margin-right: 8px;"></i> Leave a Review
+                </button>
+            </div>
         </div>
     </section>
 
@@ -398,8 +404,47 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 
-    <!-- Firebase SDK (read-only for public pages) -->
+    <!-- Review Submission Modal -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal-box" style="max-width: 500px; padding: 30px;">
+            <div class="modal-header" style="margin-bottom: 20px;">
+                <h2 style="font-size: 1.4rem;">Submit a Testimonial</h2>
+                <button class="modal-close" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div id="reviewUserInfo" style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                <img id="reviewUserAvatar" src="" style="width: 45px; height: 45px; border-radius: 50%;">
+                <div>
+                    <h4 id="reviewUserName" style="font-size: 1rem; margin: 0;">Name</h4>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Signed in with Google</span>
+                </div>
+            </div>
+            <form id="reviewForm" onsubmit="submitTestimonial(event)">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Your Role/Company (Optional)</label>
+                    <input type="text" id="reviewRole" class="form-input" placeholder="e.g. Content Creator, Business Owner" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; color: #fff;">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Your Experience *</label>
+                    <textarea id="reviewQuote" class="form-input" placeholder="How was your experience working with me?" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; min-height: 120px; resize: vertical;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label class="form-label" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Rating *</label>
+                    <select id="reviewRating" class="form-input" style="width: 100%; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; color: #fff;" required>
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5 - Excellent)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5 - Very Good)</option>
+                        <option value="3">⭐⭐⭐ (3/5 - Average)</option>
+                        <option value="2">⭐⭐ (2/5 - Poor)</option>
+                        <option value="1">⭐ (1/5 - Terrible)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;"><i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Submit for Review</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="script.js"></script>

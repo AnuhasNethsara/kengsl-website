@@ -85,6 +85,93 @@ function showDashboard(user) {
     const emailEl = document.getElementById('adminEmail');
     const avatarEl = document.getElementById('adminAvatar');
     if (emailEl) emailEl.textContent = user.email;
+// ============================================================
+//  KenGSL Admin Panel — Auth, CRUD, Image Compression
+// ============================================================
+
+let currentEditId = null;
+let currentEditType = null; // 'portfolio' or 'testimonial'
+let currentImageBase64 = null;
+let portfolioItems = [];
+let testimonialItems = [];
+let isPrimaryAdmin = false;
+let adminUsers = [];
+
+// ===== AUTH =====
+function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err => {
+        showToast(err.message, 'error');
+    });
+}
+
+function signOutUser() {
+    auth.signOut();
+}
+
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        try {
+            const adminDoc = await db.collection('settings').doc('admin').get();
+            if (!adminDoc.exists) {
+                // First user — auto-register as primary admin
+                await db.collection('settings').doc('admin').set({
+                    uid: user.uid,
+                    email: user.email,
+                    registrationLocked: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                isPrimaryAdmin = true;
+                showDashboard(user);
+                showToast('Admin account created! You are the primary administrator.', 'success');
+            } else if (adminDoc.data().uid === user.uid) {
+                // Primary admin
+                isPrimaryAdmin = true;
+                showDashboard(user);
+            } else {
+                // Check if granted admin
+                const grantedDoc = await db.collection('admins').doc(user.uid).get();
+                if (grantedDoc.exists) {
+                    isPrimaryAdmin = false;
+                    showDashboard(user);
+                } else {
+                    // Save as pending user so primary admin can see them
+                    await db.collection('pendingUsers').doc(user.uid).set({
+                        uid: user.uid,
+                        email: user.email,
+                        photoURL: user.photoURL || '',
+                        displayName: user.displayName || '',
+                        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    showAccessDenied();
+                }
+            }
+        } catch (err) {
+            showToast('Error checking admin access: ' + err.message, 'error');
+            showLogin();
+        }
+    } else {
+        showLogin();
+    }
+});
+
+// ===== UI STATE MANAGEMENT =====
+function showLogin() {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('accessDenied').style.display = 'none';
+}
+
+function showDashboard(user) {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('accessDenied').style.display = 'none';
+
+    const emailEl = document.getElementById('adminEmail');
+    const avatarEl = document.getElementById('adminAvatar');
+    if (emailEl) emailEl.textContent = user.email;
     if (avatarEl && user.photoURL) avatarEl.src = user.photoURL;
 
     // Show/hide Users tab (only for primary admin)
@@ -93,6 +180,7 @@ function showDashboard(user) {
 
     loadPortfolioItems();
     loadTestimonials();
+    loadPendingTestimonials();
     loadProfileSettings();
     if (isPrimaryAdmin) loadAdminUsers();
 }
@@ -884,5 +972,109 @@ async function processProfileImage(file) {
             <p style="color: #ef4444;">Upload failed</p>
             <p style="font-size:0.75rem; color:var(--text-muted)">Click to try again</p>
         `;
+    }
+}
+
+// ===== PENDING TESTIMONIALS LOGIC =====
+let pendingTestimonialItems = [];
+
+function loadPendingTestimonials() {
+    db.collection('pendingTestimonials').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        pendingTestimonialItems = [];
+        snapshot.forEach(doc => pendingTestimonialItems.push({ id: doc.id, ...doc.data() }));
+        renderPendingTestimonialsList(pendingTestimonialItems);
+    }, err => {
+        console.error('Error loading pending testimonials: ', err);
+    });
+}
+
+function renderPendingTestimonialsList(items) {
+    const list = document.getElementById('adminPendingTestimonialsList');
+    const countEl = document.getElementById('pendingTestimonialsCount');
+    if (countEl) countEl.textContent = items.length;
+
+    if (items.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-check-double" style="color: #10b981;"></i>
+                <h3>All caught up!</h3>
+                <p>No pending reviews to approve.</p>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = items.map(item => `
+        <div class="testimonial-row" data-id="${item.id}" style="border-left: 4px solid #f59e0b;">
+            <div class="testimonial-row-content">
+                ${item.photoURL 
+                    ? `<img src="${escapeHTML(item.photoURL)}" class="testimonial-row-avatar" style="object-fit: cover;">`
+                    : `<div class="testimonial-row-avatar">${escapeHTML((item.authorName || 'A')[0])}</div>`
+                }
+                <div class="testimonial-row-info">
+                    <h4>${escapeHTML(item.authorName)}</h4>
+                    <p class="testimonial-row-role">${escapeHTML(item.authorRole || '')}</p>
+                    <p class="testimonial-row-quote">"${escapeHTML(item.quote)}"</p>
+                    <div class="testimonial-row-stars">${'<i class="fas fa-star"></i>'.repeat(item.rating || 5)}</div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Submitted: ${item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : 'Unknown'}</p>
+                </div>
+            </div>
+            <div class="testimonial-row-actions">
+                <button class="action-btn" onclick="approvePendingTestimonial('${item.id}')" title="Approve" style="color: #10b981; border-color: rgba(16, 185, 129, 0.2);">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="rejectPendingTestimonial('${item.id}')" title="Reject">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function approvePendingTestimonial(id) {
+    if (!confirm('Approve this review? It will be visible on your website immediately.')) return;
+    
+    try {
+        const docRef = db.collection('pendingTestimonials').doc(id);
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) return;
+
+        const data = docSnap.data();
+        
+        // Find current max order for testimonials to put it at the end
+        const orderSnap = await db.collection('testimonials').orderBy('order', 'desc').limit(1).get();
+        let nextOrder = 1;
+        if (!orderSnap.empty) {
+            nextOrder = (orderSnap.docs[0].data().order || 0) + 1;
+        }
+
+        const newTestimonial = {
+            authorName: data.authorName,
+            authorRole: data.authorRole || '',
+            quote: data.quote,
+            rating: data.rating || 5,
+            avatarInitials: data.avatarInitials || data.authorName[0],
+            photoURL: data.photoURL || '',
+            order: nextOrder,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Write to live testimonials
+        await db.collection('testimonials').add(newTestimonial);
+        // Delete from pending
+        await docRef.delete();
+
+        showToast('Review approved successfully!', 'success');
+    } catch (err) {
+        showToast('Error approving review: ' + err.message, 'error');
+    }
+}
+
+async function rejectPendingTestimonial(id) {
+    if (!confirm('Are you sure you want to delete this pending review?')) return;
+    try {
+        await db.collection('pendingTestimonials').doc(id).delete();
+        showToast('Pending review deleted', 'success');
+    } catch (err) {
+        showToast('Error deleting review: ' + err.message, 'error');
     }
 }

@@ -234,8 +234,21 @@
                     <h2 style="font-size:1.3rem">Testimonials</h2>
                     <button class="btn btn-primary" style="padding:10px 24px;font-size:.9rem" onclick="openAddTestimonial()"><i class="fas fa-plus"></i> Add Testimonial</button>
                 </div>
-                <div class="testimonial-list" id="adminTestimonialsList">
-                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading...</h3></div>
+                
+                <!-- Pending Testimonials Section -->
+                <div style="margin-bottom: 40px;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-secondary);"><i class="fas fa-clock" style="color: #f59e0b;"></i> Pending Reviews (<span id="pendingTestimonialsCount">0</span>)</h3>
+                    <div class="testimonial-list" id="adminPendingTestimonialsList">
+                        <div class="empty-state"><h3>No pending reviews</h3></div>
+                    </div>
+                </div>
+
+                <!-- Live Testimonials Section -->
+                <div>
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-secondary);"><i class="fas fa-check-circle" style="color: #10b981;"></i> Live Testimonials</h3>
+                    <div class="testimonial-list" id="adminTestimonialsList">
+                        <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading...</h3></div>
+                    </div>
                 </div>
             </div>
 

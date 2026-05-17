@@ -425,6 +425,82 @@ function fetchSiteConfig() {
     });
 }
 
+// ===== Testimonial Submission (Public) =====
+let reviewUser = null;
+
+function signInForReview() {
+    if (reviewUser) {
+        openReviewModal();
+        return;
+    }
+    
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).then((result) => {
+        reviewUser = result.user;
+        openReviewModal();
+    }).catch((err) => {
+        console.error("Error signing in:", err);
+        alert("Failed to sign in. Please try again.");
+    });
+}
+
+function openReviewModal() {
+    if (!reviewUser) return;
+    
+    document.getElementById('reviewUserName').textContent = reviewUser.displayName || 'Anonymous';
+    document.getElementById('reviewUserAvatar').src = reviewUser.photoURL || 'https://placehold.co/45x45/141419/71717a?text=User';
+    
+    const modal = document.getElementById('reviewModal');
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+async function submitTestimonial(e) {
+    e.preventDefault();
+    if (!reviewUser) return;
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    btn.disabled = true;
+
+    const role = document.getElementById('reviewRole').value.trim();
+    const quote = document.getElementById('reviewQuote').value.trim();
+    const rating = parseInt(document.getElementById('reviewRating').value);
+
+    const data = {
+        uid: reviewUser.uid,
+        authorName: reviewUser.displayName || 'Anonymous',
+        authorRole: role,
+        quote: quote,
+        rating: rating,
+        avatarInitials: (reviewUser.displayName || 'A')[0].toUpperCase(),
+        photoURL: reviewUser.photoURL || '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await db.collection('pendingTestimonials').add(data);
+        alert('Thank you! Your review has been submitted and is pending approval.');
+        e.target.reset();
+        closeReviewModal();
+    } catch (err) {
+        console.error("Error submitting review:", err);
+        alert("Failed to submit review. Please try again later.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 // ===== Single DOMContentLoaded — All Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
     // Page entrance animation
@@ -453,6 +529,18 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileMenuClose();
     initRippleEffect();
     initRoleTyping();
+
+    // Review Modal Event Listeners
+    const revModal = document.getElementById('reviewModal');
+    if (revModal) {
+        revModal.querySelector('.modal-close').addEventListener('click', closeReviewModal);
+        revModal.addEventListener('click', (e) => {
+            if (e.target === revModal) closeReviewModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && revModal.classList.contains('active')) closeReviewModal();
+        });
+    }
 
     // Fetch dynamic site config
     setTimeout(() => {
