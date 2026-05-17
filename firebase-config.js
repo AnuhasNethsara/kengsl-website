@@ -58,8 +58,12 @@ const auth = firebase.auth();
 //          get(/databases/$(database)/documents/settings/admin).data.uid == request.auth.uid;
 //      }
 //
-//      // Portfolio & Testimonials: public read, any admin write
+//      // Portfolio, Coding Projects, Testimonials, & Services: public read, any admin write
 //      match /portfolio/{itemId} {
+//        allow read: if true;
+//        allow write: if isAdmin();
+//      }
+//      match /codingProjects/{itemId} {
 //        allow read: if true;
 //        allow write: if isAdmin();
 //      }
@@ -67,12 +71,32 @@ const auth = firebase.auth();
 //        allow read: if true;
 //        allow write: if isAdmin();
 //      }
+//      match /services/{itemId} {
+//        allow read: if true;
+//        allow write: if isAdmin();
+//      }
 //
-//      // Settings: any logged-in user can read to check admin status, first user can create
+//      // Settings Admin Document
 //      match /settings/admin {
 //        allow read: if request.auth != null;
 //        allow create: if request.auth != null && !exists(/databases/$(database)/documents/settings/admin);
 //        allow update, delete: if isPrimaryAdmin();
+//      }
+//
+//      // Settings Public Profile & General Configurations: public read, admin write
+//      match /settings/profile {
+//        allow read: if true;
+//        allow write: if isAdmin();
+//      }
+//      match /settings/general {
+//        allow read: if true;
+//        allow write: if isAdmin();
+//      }
+//
+//      // Pending Testimonials: logged-in user can submit, admin can manage
+//      match /pendingTestimonials/{itemId} {
+//        allow create: if request.auth != null;
+//        allow read, write: if isAdmin();
 //      }
 //
 //      // Granted Admins: primary admin controls

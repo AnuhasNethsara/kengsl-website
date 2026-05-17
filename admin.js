@@ -1,14 +1,16 @@
+
 // ============================================================
 //  KenGSL Admin Panel — Auth, CRUD, Image Compression
 // ============================================================
 
 let currentEditId = null;
-let currentEditType = null; // 'portfolio', 'testimonial', or 'codingProject'
+let currentEditType = null; // 'portfolio', 'testimonial', 'codingProject', or 'service'
 let currentImageBase64 = null;
 let currentCodingImageBase64 = null;
 let portfolioItems = [];
 let testimonialItems = [];
 let codingItems = [];
+let serviceItems = [];
 let isPrimaryAdmin = false;
 let adminUsers = [];
 
@@ -97,7 +99,9 @@ function showDashboard(user) {
     loadTestimonials();
     loadPendingTestimonials();
     loadCodingProjects();
+    loadServices();
     loadProfileSettings();
+    loadGeneralSettings();
     if (isPrimaryAdmin) loadAdminUsers();
 }
 
@@ -117,6 +121,8 @@ function switchTab(tab) {
     document.getElementById('portfolioContent').style.display = tab === 'portfolio' ? 'block' : 'none';
     const codingContent = document.getElementById('codingContent');
     if (codingContent) codingContent.style.display = tab === 'coding' ? 'block' : 'none';
+    const servicesContent = document.getElementById('servicesContent');
+    if (servicesContent) servicesContent.style.display = tab === 'services' ? 'block' : 'none';
     document.getElementById('testimonialsContent').style.display = tab === 'testimonials' ? 'block' : 'none';
     const profileContent = document.getElementById('profileContent');
     if (profileContent) profileContent.style.display = tab === 'profile' ? 'block' : 'none';
@@ -381,8 +387,8 @@ async function executeDelete() {
     btn.disabled = true;
 
     try {
-        const collection = currentEditType === 'portfolio' ? 'portfolio' : currentEditType === 'codingProject' ? 'codingProjects' : 'testimonials';
-        const label = currentEditType === 'portfolio' ? 'Portfolio item' : currentEditType === 'codingProject' ? 'Coding project' : 'Testimonial';
+        const collection = currentEditType === 'portfolio' ? 'portfolio' : currentEditType === 'codingProject' ? 'codingProjects' : currentEditType === 'service' ? 'services' : 'testimonials';
+        const label = currentEditType === 'portfolio' ? 'Portfolio item' : currentEditType === 'codingProject' ? 'Coding project' : currentEditType === 'service' ? 'Service' : 'Testimonial';
         await db.collection(collection).doc(currentEditId).delete();
         showToast(`${label} deleted!`, 'success');
         closeModal('deleteModal');
@@ -724,6 +730,9 @@ function closeModal(id) {
     if (id === 'testimonialModal') {
         currentEditId = null;
     }
+    if (id === 'serviceModal') {
+        currentEditId = null;
+    }
 }
 
 // ===== STATS =====
@@ -1029,7 +1038,12 @@ async function loadProfileSettings() {
             form.prName.value = data.name || 'Anuhas Nethsara';
             form.prAlias.value = data.alias || 'KenGSL / KenG SL';
             form.prRoles.value = (data.roles || ['Graphic Designer', 'Netch Engineer', 'Web Developer', 'Content Creator']).join(', ');
+            form.prHeroDesc.value = data.heroDesc || "A passionate creator based in Sri Lanka. From high-impact graphic design to premium Netch VPN services and modern web development, I build digital experiences that perform.";
             
+            form.prLocation.value = data.location || "Sri Lanka 🇱🇰";
+            form.prLanguages.value = data.languages || "English, Sinhala";
+            form.prSkills.value = (data.skills || ["Photoshop", "Illustrator", "Next.js / React", "V2Ray / Netch", "Premiere Pro"]).join(', ');
+
             form.prBio1.value = data.bio1 || "I'm a multi-disciplinary freelancer and digital entrepreneur based in Sri Lanka. I started as a graphic designer specializing in YouTube thumbnails and brand visuals, helping creators increase their click-through rates.";
             form.prBio2.value = data.bio2 || "Since then, my passion for technology has expanded my skill set. I now engineer high-speed V2Ray/Netch VPN solutions through ShiftLK Netch, build modern web applications using Next.js and Tailwind CSS, and produce engaging video content.";
             
@@ -1058,11 +1072,16 @@ async function saveProfileSettings(e) {
     btn.disabled = true;
 
     const rolesArr = form.prRoles.value.split(',').map(r => r.trim()).filter(r => r.length > 0);
+    const skillsArr = form.prSkills.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
     const data = {
         name: form.prName.value.trim(),
         alias: form.prAlias.value.trim(),
         roles: rolesArr,
+        heroDesc: form.prHeroDesc.value.trim(),
+        location: form.prLocation.value.trim(),
+        languages: form.prLanguages.value.trim(),
+        skills: skillsArr,
         bio1: form.prBio1.value.trim(),
         bio2: form.prBio2.value.trim(),
         statClients: form.prStatClients.value.trim(),
@@ -1233,5 +1252,187 @@ async function rejectPendingTestimonial(id) {
         showToast('Pending review deleted', 'success');
     } catch (err) {
         showToast('Error deleting review: ' + err.message, 'error');
+    }
+}
+
+// ===== SERVICES CRUD =====
+function loadServices() {
+    db.collection('services').orderBy('order', 'asc').onSnapshot(snapshot => {
+        serviceItems = [];
+        snapshot.forEach(doc => serviceItems.push({ id: doc.id, ...doc.data() }));
+        renderServicesGrid(serviceItems);
+    }, err => {
+        showToast('Error loading services: ' + err.message, 'error');
+    });
+}
+
+function renderServicesGrid(items) {
+    const grid = document.getElementById('adminServicesGrid');
+    if (!grid) return;
+
+    if (items.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-holding-heart"></i>
+                <h3>No services yet</h3>
+                <p>Click "Add Service" to display services on your homepage.</p>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = items.map(item => `
+        <div class="admin-card" data-id="${item.id}">
+            <div class="admin-card-body" style="padding-top: 20px;">
+                <div style="font-size: 1.5rem; color: ${escapeHTML(item.iconColor || 'var(--accent-1)')}; background: ${escapeHTML(item.iconBg || 'rgba(139,92,246,0.1)')}; width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                    <i class="${escapeHTML(item.icon || 'fas fa-cog')}"></i>
+                </div>
+                <h3>${escapeHTML(item.title)}</h3>
+                <p>${escapeHTML(item.description || '')}</p>
+                ${item.linkUrl ? `<div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">Link: <a href="${escapeHTML(item.linkUrl)}" target="_blank" style="color: ${escapeHTML(item.linkColor || 'var(--accent-1)')}; text-decoration: underline;">${escapeHTML(item.linkText || 'Learn More')}</a></div>` : ''}
+            </div>
+            <div class="admin-card-actions">
+                <button class="action-btn edit-btn" onclick="openEditService('${item.id}')" title="Edit">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="confirmDelete('${item.id}', 'service')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openAddService() {
+    currentEditId = null;
+    currentEditType = 'service';
+    document.getElementById('serviceModalTitle').textContent = 'Add Service';
+    document.getElementById('serviceForm').reset();
+    openModal('serviceModal');
+}
+
+function openEditService(id) {
+    const item = serviceItems.find(i => i.id === id);
+    if (!item) return;
+
+    currentEditId = id;
+    currentEditType = 'service';
+    document.getElementById('serviceModalTitle').textContent = 'Edit Service';
+    
+    const form = document.getElementById('serviceForm');
+    form.sTitle.value = item.title || '';
+    form.sDescription.value = item.description || '';
+    form.sIcon.value = item.icon || '';
+    form.sIconColor.value = item.iconColor || '';
+    form.sIconBg.value = item.iconBg || '';
+    form.sLinkColor.value = item.linkColor || '';
+    form.sLinkUrl.value = item.linkUrl || '';
+    form.sLinkText.value = item.linkText || '';
+
+    openModal('serviceModal');
+}
+
+async function saveServiceItem(e) {
+    e.preventDefault();
+    const form = document.getElementById('serviceForm');
+    const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const data = {
+        title: form.sTitle.value.trim(),
+        description: form.sDescription.value.trim(),
+        icon: form.sIcon.value.trim(),
+        iconColor: form.sIconColor.value.trim(),
+        iconBg: form.sIconBg.value.trim(),
+        linkColor: form.sLinkColor.value.trim(),
+        linkUrl: form.sLinkUrl.value.trim(),
+        linkText: form.sLinkText.value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if (currentEditId) {
+            await db.collection('services').doc(currentEditId).update(data);
+            showToast('Service updated successfully!', 'success');
+        } else {
+            const orderSnap = await db.collection('services').orderBy('order', 'desc').limit(1).get();
+            let nextOrder = 1;
+            if (!orderSnap.empty) {
+                nextOrder = (orderSnap.docs[0].data().order || 0) + 1;
+            }
+            data.order = nextOrder;
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('services').add(data);
+            showToast('Service added successfully!', 'success');
+        }
+        closeModal('serviceModal');
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
+// ===== GENERAL & SEO SETTINGS =====
+async function loadGeneralSettings() {
+    try {
+        const doc = await db.collection('settings').doc('general').get();
+        if (doc.exists) {
+            const data = doc.data();
+            const form = document.getElementById('generalSettingsForm');
+            if (!form) return;
+
+            form.seoTitle.value = data.seoTitle || '';
+            form.seoDesc.value = data.seoDesc || '';
+            form.seoKeywords.value = data.seoKeywords || '';
+            form.seoCanonical.value = data.seoCanonical || '';
+            form.seoOgImage.value = data.seoOgImage || '';
+            
+            form.whatsapp.value = data.whatsapp || '';
+            form.instagram.value = data.instagram || '';
+            form.youtube.value = data.youtube || '';
+            form.tiktok.value = data.tiktok || '';
+            form.discord.value = data.discord || '';
+            form.email.value = data.email || '';
+        }
+    } catch (err) {
+        console.error('Error loading general settings:', err);
+    }
+}
+
+async function saveGeneralSettings(e) {
+    e.preventDefault();
+    const form = document.getElementById('generalSettingsForm');
+    const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const data = {
+        seoTitle: form.seoTitle.value.trim(),
+        seoDesc: form.seoDesc.value.trim(),
+        seoKeywords: form.seoKeywords.value.trim(),
+        seoCanonical: form.seoCanonical.value.trim(),
+        seoOgImage: form.seoOgImage.value.trim(),
+        
+        whatsapp: form.whatsapp.value.trim(),
+        instagram: form.instagram.value.trim(),
+        youtube: form.youtube.value.trim(),
+        tiktok: form.tiktok.value.trim(),
+        discord: form.discord.value.trim(),
+        email: form.email.value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await db.collection('settings').doc('general').set(data, { merge: true });
+        showToast('SEO & Social settings saved successfully!', 'success');
+    } catch (err) {
+        showToast('Error saving general settings: ' + err.message, 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }

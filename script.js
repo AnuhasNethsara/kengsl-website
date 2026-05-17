@@ -536,9 +536,27 @@ function initRoleTyping(dynamicRoles = null) {
     }, 3000);
 }
 
+// ===== Skill Icon Helper =====
+function getSkillIcon(skillName) {
+    const name = skillName.toLowerCase();
+    if (name.includes('photoshop')) return '<img src="icons/photoshop.png" alt="Photoshop" class="skill-icon" onerror="this.style.display=\'none\';">';
+    if (name.includes('illustrator')) return '<img src="icons/illustrator.png" alt="Illustrator" class="skill-icon" onerror="this.style.display=\'none\';">';
+    if (name.includes('react') || name.includes('next')) return '<i class="fab fa-react" style="margin-right:8px; color:#61dafb"></i>';
+    if (name.includes('vpn') || name.includes('v2ray') || name.includes('netch')) return '<i class="fas fa-network-wired" style="margin-right:8px; color:#ff6a00"></i>';
+    if (name.includes('premiere') || name.includes('video') || name.includes('editor')) return '<i class="fas fa-video" style="margin-right:8px; color:#9999ff"></i>';
+    if (name.includes('js') || name.includes('javascript')) return '<i class="fab fa-js" style="margin-right:8px; color:#f7df1e"></i>';
+    if (name.includes('html')) return '<i class="fab fa-html5" style="margin-right:8px; color:#e34f26"></i>';
+    if (name.includes('css')) return '<i class="fab fa-css3-alt" style="margin-right:8px; color:#1572b6"></i>';
+    if (name.includes('git')) return '<i class="fab fa-git-alt" style="margin-right:8px; color:#f05032"></i>';
+    if (name.includes('figma')) return '<i class="fab fa-figma" style="margin-right:8px; color:#f24e1e"></i>';
+    return '<i class="fas fa-cog" style="margin-right:8px; color:var(--accent-1)"></i>';
+}
+
 // ===== Dynamic Site Config Fetching =====
 function fetchSiteConfig() {
     if (!window.db) return; // Wait for firebase to load
+    
+    // Load Profile Settings
     db.collection('settings').doc('profile').get().then(doc => {
         if (doc.exists) {
             const data = doc.data();
@@ -563,6 +581,32 @@ function fetchSiteConfig() {
             if (data.bio2) {
                 const bio2 = document.getElementById('profile-bio-2');
                 if (bio2) bio2.textContent = data.bio2;
+            }
+
+            // Hero Description
+            if (data.heroDesc) {
+                const heroDesc = document.getElementById('profile-hero-desc');
+                if (heroDesc) heroDesc.textContent = data.heroDesc;
+            }
+
+            // Location & Languages
+            if (data.location) {
+                const locationEl = document.getElementById('profile-location');
+                if (locationEl) locationEl.textContent = data.location;
+            }
+            if (data.languages) {
+                const languagesEl = document.getElementById('profile-languages');
+                if (languagesEl) languagesEl.textContent = data.languages;
+            }
+            
+            // Skills tags
+            if (data.skills && Array.isArray(data.skills) && data.skills.length > 0) {
+                const skillsContainer = document.getElementById('profile-skills-container');
+                if (skillsContainer) {
+                    skillsContainer.innerHTML = data.skills.map(skill => `
+                        <span class="skill-tag">${getSkillIcon(skill)} ${escapeHTML(skill)}</span>
+                    `).join('');
+                }
             }
             
             // Stats
@@ -599,6 +643,102 @@ function fetchSiteConfig() {
     }).catch(err => {
         console.error("Error fetching profile config:", err);
     });
+
+    // Load General Settings (SEO & Socials)
+    db.collection('settings').doc('general').get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+
+            // SEO Metadata
+            if (data.seoTitle) {
+                document.title = data.seoTitle;
+                const seoOgTitle = document.getElementById('seo-og-title');
+                if (seoOgTitle) seoOgTitle.setAttribute('content', data.seoTitle);
+            }
+            if (data.seoDesc) {
+                const seoDesc = document.getElementById('seo-desc');
+                if (seoDesc) seoDesc.setAttribute('content', data.seoDesc);
+                const seoOgDesc = document.getElementById('seo-og-desc');
+                if (seoOgDesc) seoOgDesc.setAttribute('content', data.seoDesc);
+            }
+            if (data.seoKeywords) {
+                const seoKeywords = document.getElementById('seo-keywords');
+                if (seoKeywords) seoKeywords.setAttribute('content', data.seoKeywords);
+            }
+            if (data.seoCanonical) {
+                const seoCanonical = document.getElementById('seo-canonical');
+                if (seoCanonical) seoCanonical.setAttribute('href', data.seoCanonical);
+                const seoOgUrl = document.getElementById('seo-og-url');
+                if (seoOgUrl) seoOgUrl.setAttribute('content', data.seoCanonical);
+            }
+            if (data.seoOgImage) {
+                const seoOgImage = document.getElementById('seo-og-image');
+                if (seoOgImage) seoOgImage.setAttribute('content', data.seoOgImage);
+            }
+
+            // Social & Contact Links
+            if (data.whatsapp) {
+                const waUrl = data.whatsapp.startsWith('http') ? data.whatsapp : `https://wa.me/${data.whatsapp.replace(/\D/g, '')}`;
+                document.querySelectorAll('.social-whatsapp').forEach(el => el.setAttribute('href', waUrl));
+            }
+            if (data.instagram) {
+                document.querySelectorAll('.social-instagram').forEach(el => el.setAttribute('href', data.instagram));
+            }
+            if (data.youtube) {
+                document.querySelectorAll('.social-youtube').forEach(el => el.setAttribute('href', data.youtube));
+            }
+            if (data.tiktok) {
+                document.querySelectorAll('.social-tiktok').forEach(el => el.setAttribute('href', data.tiktok));
+            }
+            if (data.discord) {
+                document.querySelectorAll('.social-discord').forEach(el => el.setAttribute('href', data.discord));
+            }
+        }
+    }).catch(err => {
+        console.error("Error fetching general config:", err);
+    });
+}
+
+// ===== Dynamic Services Renderer =====
+async function renderServices() {
+    const grid = document.getElementById('services-grid');
+    if (!grid) return;
+
+    try {
+        const snapshot = await db.collection('services').orderBy('order', 'asc').get();
+        if (snapshot.empty) return; // Keep fallback
+
+        const items = [];
+        snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+
+        grid.innerHTML = items.map((item, i) => {
+            const iconColor = item.iconColor || 'var(--accent-1)';
+            const iconBg = item.iconBg || 'rgba(139,92,246,0.1)';
+            const linkColor = item.linkColor || 'var(--accent-1)';
+            const iconClass = item.icon || 'fas fa-cog';
+
+            let linkHtml = '';
+            if (item.linkUrl) {
+                const target = item.linkUrl.startsWith('http') ? 'target="_blank" rel="noopener noreferrer"' : '';
+                linkHtml = `<a href="${escapeHTML(item.linkUrl)}" ${target} class="service-link" style="color: ${escapeHTML(linkColor)};">${escapeHTML(item.linkText || 'Learn More')} <i class="fas fa-arrow-right"></i></a>`;
+            }
+
+            return `
+                <div class="service-card animate-on-scroll delay-${(i % 4) + 1}">
+                    <div class="service-icon" style="color: ${escapeHTML(iconColor)}; background: ${escapeHTML(iconBg)};">
+                        <i class="${escapeHTML(iconClass)}"></i>
+                    </div>
+                    <h3 class="service-title">${escapeHTML(item.title)}</h3>
+                    <p class="service-desc">${escapeHTML(item.description)}</p>
+                    ${linkHtml}
+                </div>
+            `;
+        }).join('');
+
+        grid.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+    } catch (err) {
+        console.error('Error loading dynamic services:', err);
+    }
 }
 
 // ===== Testimonial Submission (Public) =====
@@ -697,6 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderFeatured();
     renderPortfolio();
     renderTestimonials();
+    renderServices();
     setupFilters();
     initLightbox();
     animateCounters();
@@ -719,6 +860,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && revModal.classList.contains('active')) closeReviewModal();
+        });
+    }
+
+    // Auto-listen to auth state changes to set reviewUser instantly
+    if (window.auth) {
+        auth.onAuthStateChanged((user) => {
+            reviewUser = user;
         });
     }
 

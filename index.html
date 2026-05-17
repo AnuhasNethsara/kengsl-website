@@ -5,25 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="assets/Ken-G_Logo.png">
-    <title>Anuhas Nethsara | Graphic Designer, Content Creator, Web Developer & Netch Engineer</title>
+    <title id="seo-title">Anuhas Nethsara | Graphic Designer, Content Creator, Web Developer & Netch Engineer</title>
 
-    <meta name="description"
+    <meta id="seo-desc" name="description"
         content="Anuhas Nethsara (KenGSL) is a multi-disciplinary freelancer based in Sri Lanka specializing in high-impact Graphic Design, Netch VPN Services, Web Development, and Content Creation." />
-    <meta name="keywords"
+    <meta id="seo-keywords" name="keywords"
         content="Anuhas Nethsara, KenGSL, Sri Lankan graphic designer, YouTube thumbnail designer, ShiftLK Netch, V2Ray VPN Sri Lanka, Web Developer Next.js, content creator, YouTube creator" />
     <meta name="author" content="Anuhas Nethsara | KenGSL" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0f0f0f" />
-    <link rel="canonical" href="https://www.youtube.com/@Sl_KenG" />
+    <link id="seo-canonical" rel="canonical" href="https://www.youtube.com/@Sl_KenG" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="profile" />
-    <meta property="og:title" content="Anuhas Nethsara | Multi-Disciplinary Creator" />
-    <meta property="og:description"
+    <meta id="seo-og-title" property="og:title" content="Anuhas Nethsara | Multi-Disciplinary Creator" />
+    <meta id="seo-og-desc" property="og:description"
         content="Graphic Design, Premium Netch VPN Services, Web Development & Content Creation by Anuhas Nethsara (KenGSL)." />
-    <meta property="og:url" content="https://www.youtube.com/@Sl_KenG" />
+    <meta id="seo-og-url" property="og:url" content="https://www.youtube.com/@Sl_KenG" />
     <meta property="og:site_name" content="Anuhas Nethsara Portfolio" />
-    <meta property="og:image" content="https://www.instagram.com/_heartless.deneth" />
+    <meta id="seo-og-image" property="og:image" content="https://www.instagram.com/_heartless.deneth" />
 
     <!-- Social Links -->
     <link rel="me" href="https://www.instagram.com/_heartless.deneth" />
@@ -76,7 +76,7 @@
                 </div>
             </div>
 
-            <p class="hero-desc animate-on-scroll delay-2">
+            <p class="hero-desc animate-on-scroll delay-2" id="profile-hero-desc">
                 A passionate creator based in Sri Lanka. From high-impact graphic design to premium Netch VPN services
                 and modern web development, I build digital experiences that perform.
             </p>
@@ -145,15 +145,15 @@
                         </div>
                         <div class="info-item">
                             <span class="info-label">Location</span>
-                            <span class="info-value">Sri Lanka 🇱🇰</span>
+                            <span class="info-value" id="profile-location">Sri Lanka 🇱🇰</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Languages</span>
-                            <span class="info-value">English, Sinhala</span>
+                            <span class="info-value" id="profile-languages">English, Sinhala</span>
                         </div>
                     </div>
 
-                    <div class="skills-container animate-on-scroll delay-2" style="margin-top: 40px;">
+                    <div class="skills-container animate-on-scroll delay-2" id="profile-skills-container" style="margin-top: 40px;">
                         <span class="skill-tag"><img src="icons/photoshop.png" alt="Photoshop" class="skill-icon"
                                 onerror="this.style.display='none';"> Photoshop</span>
                         <span class="skill-tag"><img src="icons/illustrator.png" alt="Illustrator" class="skill-icon"
@@ -179,53 +179,31 @@
                     full-stack development.</p>
             </div>
 
-            <div class="services-grid">
-                <!-- Service 1 -->
+            <div class="services-grid" id="services-grid">
+                <!-- Dynamic cards populated by script.js -->
                 <div class="service-card animate-on-scroll delay-1">
-                    <div class="service-icon">
-                        <i class="fas fa-paint-brush"></i>
-                    </div>
+                    <div class="service-icon"><i class="fas fa-paint-brush"></i></div>
                     <h3 class="service-title">Graphic Design</h3>
-                    <p class="service-desc">High-impact YouTube thumbnails, custom branding, and dynamic social media
-                        visuals that drive engagement and clicks.</p>
+                    <p class="service-desc">High-impact YouTube thumbnails, custom branding, and dynamic social media visuals that drive engagement and clicks.</p>
                     <a href="#work" class="service-link">View Portfolio <i class="fas fa-arrow-right"></i></a>
                 </div>
-
-                <!-- Service 2 -->
                 <div class="service-card animate-on-scroll delay-2">
-                    <div class="service-icon" style="color: #ff6a00; background: rgba(255,106,0,0.1);">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
+                    <div class="service-icon" style="color: #ff6a00; background: rgba(255,106,0,0.1);"><i class="fas fa-shield-alt"></i></div>
                     <h3 class="service-title">ShiftLK Netch VPN</h3>
-                    <p class="service-desc">Premium V2Ray and Netch servers providing ultra-low latency, unlimited
-                        bandwidth, and zero restrictions for Sri Lankan users.</p>
-                    <a href="https://shiftlk.web.app/" target="_blank" rel="noopener noreferrer" class="service-link"
-                        style="color: #ff6a00;">Visit ShiftLK <i class="fas fa-external-link-alt"></i></a>
+                    <p class="service-desc">Premium V2Ray and Netch servers providing ultra-low latency, unlimited bandwidth, and zero restrictions for Sri Lankan users.</p>
+                    <a href="https://shiftlk.web.app/" target="_blank" rel="noopener noreferrer" class="service-link" style="color: #ff6a00;">Visit ShiftLK <i class="fas fa-external-link-alt"></i></a>
                 </div>
-
-                <!-- Service 3 -->
                 <div class="service-card animate-on-scroll delay-3">
-                    <div class="service-icon" style="color: #61dafb; background: rgba(97,218,251,0.1);">
-                        <i class="fas fa-code"></i>
-                    </div>
+                    <div class="service-icon" style="color: #61dafb; background: rgba(97,218,251,0.1);"><i class="fas fa-code"></i></div>
                     <h3 class="service-title">Web Development</h3>
-                    <p class="service-desc">Modern, responsive, and blazing fast web applications built with Next.js,
-                        React, and Tailwind CSS. (Like this site!)</p>
-                    <a href="#contact" class="service-link" style="color: #61dafb;">Start a Project <i
-                            class="fas fa-arrow-right"></i></a>
+                    <p class="service-desc">Modern, responsive, and blazing fast web applications built with Next.js, React, and Tailwind CSS.</p>
+                    <a href="#contact" class="service-link" style="color: #61dafb;">Start a Project <i class="fas fa-arrow-right"></i></a>
                 </div>
-
-                <!-- Service 4 -->
                 <div class="service-card animate-on-scroll delay-4">
-                    <div class="service-icon" style="color: #ef4444; background: rgba(239,68,68,0.1);">
-                        <i class="fab fa-youtube"></i>
-                    </div>
+                    <div class="service-icon" style="color: #ef4444; background: rgba(239,68,68,0.1);"><i class="fab fa-youtube"></i></div>
                     <h3 class="service-title">Content Creation</h3>
-                    <p class="service-desc">Creating engaging YouTube content, tutorials, and lifestyle videos to
-                        connect with audiences and share digital experiences.</p>
-                    <a href="https://www.youtube.com/@Sl_KenG" target="_blank" rel="noopener noreferrer"
-                        class="service-link" style="color: #ef4444;">Watch Videos <i
-                            class="fas fa-external-link-alt"></i></a>
+                    <p class="service-desc">Creating engaging YouTube content, tutorials, and lifestyle videos to connect with audiences and share digital experiences.</p>
+                    <a href="https://www.youtube.com/@Sl_KenG" target="_blank" rel="noopener noreferrer" class="service-link" style="color: #ef4444;">Watch Videos <i class="fas fa-external-link-alt"></i></a>
                 </div>
             </div>
         </div>
@@ -343,15 +321,15 @@
                         <div class="contact-item">
                             <h3>Connect Directly</h3>
                             <div class="social-links">
-                                <a href="https://wa.me/94788246118" class="social-btn" target="_blank"
+                                <a href="https://wa.me/94788246118" class="social-btn social-whatsapp" target="_blank"
                                     rel="noopener noreferrer" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                                <a href="https://www.instagram.com/_heartless.deneth" class="social-btn" target="_blank"
+                                <a href="https://www.instagram.com/_heartless.deneth" class="social-btn social-instagram" target="_blank"
                                     rel="noopener noreferrer" title="Instagram"><i class="fab fa-instagram"></i></a>
-                                <a href="https://www.youtube.com/@Sl_KenG" class="social-btn" target="_blank"
+                                <a href="https://www.youtube.com/@Sl_KenG" class="social-btn social-youtube" target="_blank"
                                     rel="noopener noreferrer" title="YouTube"><i class="fab fa-youtube"></i></a>
-                                <a href="https://www.tiktok.com/@not_ur_anuhas" class="social-btn" target="_blank"
+                                <a href="https://www.tiktok.com/@not_ur_anuhas" class="social-btn social-tiktok" target="_blank"
                                     rel="noopener noreferrer" title="TikTok"><i class="fab fa-tiktok"></i></a>
-                                <a href="https://discord.gg/w6UNr4MK4h" class="social-btn" target="_blank"
+                                <a href="https://discord.gg/w6UNr4MK4h" class="social-btn social-discord" target="_blank"
                                     rel="noopener noreferrer" title="Discord"><i class="fab fa-discord"></i></a>
                             </div>
                         </div>

@@ -214,6 +214,7 @@
             <div class="tab-bar">
                 <button class="admin-tab active" data-tab="portfolio" onclick="switchTab('portfolio')"><i class="fas fa-images"></i>&nbsp; Portfolio</button>
                 <button class="admin-tab" data-tab="coding" onclick="switchTab('coding')"><i class="fas fa-code"></i>&nbsp; Coding Projects</button>
+                <button class="admin-tab" data-tab="services" onclick="switchTab('services')"><i class="fas fa-hand-holding-heart"></i>&nbsp; Services</button>
                 <button class="admin-tab" data-tab="testimonials" onclick="switchTab('testimonials')"><i class="fas fa-quote-right"></i>&nbsp; Testimonials</button>
                 <button class="admin-tab" data-tab="profile" onclick="switchTab('profile')"><i class="fas fa-user-cog"></i>&nbsp; Profile</button>
                 <button class="admin-tab" data-tab="users" onclick="switchTab('users')" style="display:none;"><i class="fas fa-users"></i>&nbsp; Users</button>
@@ -262,6 +263,17 @@
                     <div class="testimonial-list" id="adminTestimonialsList">
                         <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading...</h3></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Services Content -->
+            <div id="servicesContent" style="display:none">
+                <div class="section-bar">
+                    <h2 style="font-size:1.3rem">Homepage Services</h2>
+                    <button class="btn btn-primary" style="padding:10px 24px;font-size:.9rem" onclick="openAddService()"><i class="fas fa-plus"></i> Add Service</button>
+                </div>
+                <div class="admin-grid" id="adminServicesGrid">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading...</h3></div>
                 </div>
             </div>
 
@@ -322,6 +334,14 @@
                             <div class="form-group"><label class="form-label">Alias</label><input type="text" name="prAlias" class="form-input" placeholder="e.g. KenGSL / KenG SL"></div>
                         </div>
                         <div class="form-group"><label class="form-label">Typewriter Roles (comma separated)</label><input type="text" name="prRoles" class="form-input" placeholder="Graphic Designer, Web Developer, ..."></div>
+                        <div class="form-group"><label class="form-label">Hero Description</label><textarea name="prHeroDesc" class="form-input" placeholder="A passionate creator based in Sri Lanka..." style="min-height: 70px;"></textarea></div>
+                        
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">Location</label><input type="text" name="prLocation" class="form-input" placeholder="e.g. Sri Lanka 🇱🇰"></div>
+                            <div class="form-group"><label class="form-label">Languages</label><input type="text" name="prLanguages" class="form-input" placeholder="e.g. English, Sinhala"></div>
+                        </div>
+
+                        <div class="form-group"><label class="form-label">Skills tags (comma separated)</label><input type="text" name="prSkills" class="form-input" placeholder="Photoshop, Illustrator, Next.js, V2Ray / Netch, Premiere Pro"></div>
                         
                         <div class="form-group"><label class="form-label">Bio Paragraph 1</label><textarea name="prBio1" class="form-input" placeholder="I'm a multi-disciplinary freelancer..." style="min-height: 80px;"></textarea></div>
                         <div class="form-group"><label class="form-label">Bio Paragraph 2</label><textarea name="prBio2" class="form-input" placeholder="Since then, my passion for technology..." style="min-height: 80px;"></textarea></div>
@@ -335,6 +355,51 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;"><i class="fas fa-save"></i> Save Profile Settings</button>
+                    </form>
+                </div>
+
+                <!-- General SEO & Social Links Settings Form -->
+                <div class="admin-card" style="padding: 24px; max-width: 800px; margin: 30px auto 0;">
+                    <h2 style="font-size:1.2rem; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-globe"></i> SEO & Social Settings</h2>
+                    <form id="generalSettingsForm" onsubmit="saveGeneralSettings(event)">
+                        <div class="form-group">
+                            <label class="form-label">SEO Page Title</label>
+                            <input type="text" name="seoTitle" class="form-input" placeholder="e.g. Anuhas Nethsara | Graphic Designer">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SEO Meta Description</label>
+                            <textarea name="seoDesc" class="form-input" placeholder="Anuhas Nethsara (KenGSL) is a freelancer..." style="min-height: 70px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">SEO Meta Keywords</label>
+                            <input type="text" name="seoKeywords" class="form-input" placeholder="Anuhas Nethsara, KenGSL, YouTube thumbnail designer">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">SEO Canonical URL</label>
+                                <input type="url" name="seoCanonical" class="form-input" placeholder="https://...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">SEO Share Image (Open Graph)</label>
+                                <input type="url" name="seoOgImage" class="form-input" placeholder="https://...">
+                            </div>
+                        </div>
+
+                        <h3 style="margin: 24px 0 16px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Social & Contact Links</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">WhatsApp Number / Link</label><input type="text" name="whatsapp" class="form-input" placeholder="e.g. +94788246118"></div>
+                            <div class="form-group"><label class="form-label">Instagram URL</label><input type="url" name="instagram" class="form-input" placeholder="https://instagram.com/..."></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">YouTube Channel URL</label><input type="url" name="youtube" class="form-input" placeholder="https://youtube.com/..."></div>
+                            <div class="form-group"><label class="form-label">TikTok Profile URL</label><input type="url" name="tiktok" class="form-input" placeholder="https://tiktok.com/..."></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">Discord Invite URL</label><input type="url" name="discord" class="form-input" placeholder="https://discord.gg/..."></div>
+                            <div class="form-group"><label class="form-label">Public Contact Email</label><input type="email" name="email" class="form-input" placeholder="e.g. name@domain.com"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;"><i class="fas fa-save"></i> Save SEO & Social Settings</button>
                     </form>
                 </div>
             </div>
@@ -474,6 +539,57 @@
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> Save Testimonial</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Service Modal -->
+    <div class="modal-overlay" id="serviceModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="serviceModalTitle">Add Service</h2>
+                <button class="modal-close-btn" onclick="closeModal('serviceModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="serviceForm" onsubmit="saveServiceItem(event)">
+                <div class="form-group">
+                    <label class="form-label">Title *</label>
+                    <input type="text" name="sTitle" class="form-input" placeholder="e.g. Graphic Design" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description *</label>
+                    <textarea name="sDescription" class="form-input" placeholder="Service description..." required style="min-height: 80px;"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">FontAwesome Icon Class *</label>
+                        <input type="text" name="sIcon" class="form-input" placeholder="e.g. fas fa-paint-brush" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Icon Color (HEX)</label>
+                        <input type="text" name="sIconColor" class="form-input" placeholder="e.g. #ff6a00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Icon Background (RGBA)</label>
+                        <input type="text" name="sIconBg" class="form-input" placeholder="e.g. rgba(255,106,0,0.1)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Link Color (HEX)</label>
+                        <input type="text" name="sLinkColor" class="form-input" placeholder="e.g. #ff6a00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Link URL (optional)</label>
+                        <input type="text" name="sLinkUrl" class="form-input" placeholder="e.g. #contact or https://...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Link Text (optional)</label>
+                        <input type="text" name="sLinkText" class="form-input" placeholder="e.g. View Portfolio">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> Save Service</button>
             </form>
         </div>
     </div>
