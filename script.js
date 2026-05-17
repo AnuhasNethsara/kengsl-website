@@ -91,7 +91,13 @@ async function renderFeatured() {
                      onerror="this.src='https://placehold.co/600x400/141419/71717a?text=Image+Not+Found'">
             </div>
             <div class="portfolio-overlay">
-                <span class="p-category">${escapeHTML(item.categoryDisplay || item.category)}</span>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                    <span class="p-category">${escapeHTML(item.categoryDisplay || item.category)}</span>
+                    <button class="like-btn ${isLiked(item.id) ? 'liked' : ''}" onclick="toggleLike('${item.id}', event)">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-count" id="like-count-${item.id}">${item.likes || 0}</span>
+                    </button>
+                </div>
                 <h3 class="p-title">${escapeHTML(item.title)}</h3>
                 <p class="p-desc">${escapeHTML(item.description)}</p>
             </div>
@@ -124,7 +130,13 @@ async function renderPortfolio(filter = 'all') {
                      onerror="this.src='https://placehold.co/600x400/141419/71717a?text=Image+Not+Found'">
             </div>
             <div class="portfolio-overlay">
-                <span class="p-category">${escapeHTML(item.categoryDisplay || item.category)}</span>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                    <span class="p-category">${escapeHTML(item.categoryDisplay || item.category)}</span>
+                    <button class="like-btn ${isLiked(item.id) ? 'liked' : ''}" onclick="toggleLike('${item.id}', event)">
+                        <i class="fas fa-heart"></i>
+                        <span class="like-count" id="like-count-${item.id}">${item.likes || 0}</span>
+                    </button>
+                </div>
                 <h3 class="p-title">${escapeHTML(item.title)}</h3>
                 <p class="p-desc">${escapeHTML(item.description)}</p>
             </div>
@@ -172,6 +184,67 @@ function setupFilters() {
             renderPortfolio(btn.getAttribute('data-filter'));
         });
     });
+}
+
+// ===== Portfolio Likes Logic =====
+function getLikedItems() {
+    try {
+        const likes = localStorage.getItem('kengsl_likes');
+        return likes ? JSON.parse(likes) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function isLiked(itemId) {
+    return getLikedItems().includes(itemId);
+}
+
+async function toggleLike(itemId, event) {
+    // Prevent the lightbox from opening if clicking the like button
+    event.stopPropagation();
+
+    const btn = event.currentTarget;
+    const countEl = document.getElementById(`like-count-${itemId}`);
+    let currentCount = parseInt(countEl.textContent) || 0;
+    
+    let likedItems = getLikedItems();
+    const alreadyLiked = likedItems.includes(itemId);
+
+    // Optimistic UI update
+    if (alreadyLiked) {
+        btn.classList.remove('liked');
+        currentCount = Math.max(0, currentCount - 1);
+        likedItems = likedItems.filter(id => id !== itemId);
+    } else {
+        btn.classList.add('liked');
+        currentCount += 1;
+        likedItems.push(itemId);
+    }
+    
+    countEl.textContent = currentCount;
+    localStorage.setItem('kengsl_likes', JSON.stringify(likedItems));
+
+    // Animate
+    btn.style.transform = 'scale(1.2)';
+    setTimeout(() => btn.style.transform = '', 200);
+
+    // Update Firestore
+    try {
+        await db.collection('portfolio').doc(itemId).update({
+            likes: firebase.firestore.FieldValue.increment(alreadyLiked ? -1 : 1)
+        });
+        
+        // Update cache so switching filters doesn't reset it
+        if (portfolioCache) {
+            const cachedItem = portfolioCache.find(i => i.id === itemId);
+            if (cachedItem) {
+                cachedItem.likes = currentCount;
+            }
+        }
+    } catch (err) {
+        console.error('Error updating like:', err);
+    }
 }
 
 // ===== Lightbox Modal (Event Delegation — no duplicate listeners) =====

@@ -157,6 +157,9 @@ function renderPortfolioGrid(items) {
             <div class="admin-card-body">
                 <h3>${escapeHTML(item.title)}</h3>
                 <p>${escapeHTML(item.description || '')}</p>
+                <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
+                    <i class="fas fa-heart" style="color: #ef4444; margin-right: 4px;"></i> ${item.likes || 0} Likes
+                </div>
             </div>
             <div class="admin-card-actions">
                 <button class="action-btn edit-btn" onclick="openEditPortfolio('${item.id}')" title="Edit">
