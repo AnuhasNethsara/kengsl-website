@@ -1150,9 +1150,9 @@ async function processProfileImage(file) {
     document.getElementById('profileUploadDropZone').innerHTML = '<div class="compress-loading"><i class="fas fa-spinner fa-spin"></i> Processing...</div>';
     
     try {
-        const compressedBase64 = await compressImage(file, quality, 400); // 400px max width for avatar
-        currentProfileImageBase64 = compressedBase64;
-        document.getElementById('profileAvatarPreview').src = compressedBase64;
+        const result = await compressToWebP(file, quality, 400); // 400px max width for avatar
+        currentProfileImageBase64 = result.base64;
+        document.getElementById('profileAvatarPreview').src = result.base64;
         
         // Restore drop zone
         document.getElementById('profileUploadDropZone').innerHTML = `
