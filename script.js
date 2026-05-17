@@ -1,6 +1,7 @@
 // ===== Portfolio & Testimonials Data Cache =====
 let portfolioCache = null;
 let testimonialsCache = null;
+let codingProjectsCache = null;
 
 // ===== Mobile Menu Toggle =====
 function toggleMenu() {
@@ -52,6 +53,26 @@ async function fetchTestimonials() {
         return items;
     } catch (error) {
         console.error('Error loading testimonials from Firestore:', error);
+        return [];
+    }
+}
+
+async function fetchCodingProjects() {
+    if (codingProjectsCache) return codingProjectsCache;
+
+    try {
+        const snapshot = await db.collection('codingProjects').orderBy('order', 'asc').get();
+        const items = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.title) {
+                items.push({ id: doc.id, ...data });
+            }
+        });
+        codingProjectsCache = items;
+        return items;
+    } catch (error) {
+        console.error('Error loading coding projects from Firestore:', error);
         return [];
     }
 }
@@ -184,6 +205,88 @@ function setupFilters() {
             renderPortfolio(btn.getAttribute('data-filter'));
         });
     });
+}
+
+// ===== Render Coding Projects (shared renderer) =====
+function renderCodingCard(item, i) {
+    const techHtml = (item.techStack || []).map(t => `<span class="tech-badge">${escapeHTML(t)}</span>`).join('');
+    let actionsHtml = '';
+    if (item.projectUrl || item.githubUrl) {
+        actionsHtml = '<div class="coding-card-actions">';
+        if (item.projectUrl) {
+            actionsHtml += `<a href="${escapeHTML(item.projectUrl)}" target="_blank" rel="noopener noreferrer" class="coding-link live-link"><i class="fas fa-external-link-alt"></i> Live Demo</a>`;
+        }
+        if (item.githubUrl) {
+            actionsHtml += `<a href="${escapeHTML(item.githubUrl)}" target="_blank" rel="noopener noreferrer" class="coding-link github-link"><i class="fab fa-github"></i> GitHub</a>`;
+        }
+        actionsHtml += '</div>';
+    }
+    return `
+        <div class="coding-card animate-on-scroll delay-${(i % 3) + 1}">
+            <div class="coding-card-img">
+                <img src="${escapeHTML(item.image || 'https://placehold.co/600x400/141419/61dafb?text=Project')}" 
+                     alt="${escapeHTML(item.title)}" loading="lazy"
+                     onerror="this.src='https://placehold.co/600x400/141419/61dafb?text=Project'">
+                <span class="coding-card-type">${escapeHTML(item.categoryDisplay || item.category || 'Project')}</span>
+            </div>
+            <div class="coding-card-body">
+                <h3>${escapeHTML(item.title)}</h3>
+                <p>${escapeHTML(item.description || '')}</p>
+                ${techHtml ? `<div class="tech-stack">${techHtml}</div>` : ''}
+                ${actionsHtml}
+            </div>
+        </div>
+    `;
+}
+
+async function renderCodingProjects(gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+
+    renderSkeletons(grid, 3);
+
+    const items = await fetchCodingProjects();
+
+    if (items.length === 0) {
+        grid.innerHTML = `
+            <div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 80px 20px;">
+                <i class="fas fa-code" style="font-size: 3rem; opacity: 0.3; margin-bottom: 20px; display: block;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 8px;">Coding Projects Coming Soon</h3>
+                <p style="color: var(--text-muted);">Development projects will appear here once added via the admin panel.</p>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = items.map((item, i) => renderCodingCard(item, i)).join('');
+    grid.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+}
+
+// ===== Project Tab Switching (Index Page) =====
+function switchProjectTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('#projectsTabs .projects-tab').forEach(btn => btn.classList.remove('active'));
+    const targetBtn = document.querySelector(`#projectsTabs [data-project-tab="${tab}"]`);
+    if (targetBtn) targetBtn.classList.add('active');
+
+    // Switch content
+    const graphicsContent = document.getElementById('graphicsTabContent');
+    const codingContent = document.getElementById('codingTabContent');
+    if (graphicsContent) graphicsContent.classList.toggle('active', tab === 'graphics');
+    if (codingContent) codingContent.classList.toggle('active', tab === 'coding');
+}
+
+// ===== Gallery Tab Switching (Portfolio Page) =====
+function switchGalleryTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('#galleryProjectsTabs .projects-tab').forEach(btn => btn.classList.remove('active'));
+    const targetBtn = document.querySelector(`#galleryProjectsTabs [data-project-tab="${tab}"]`);
+    if (targetBtn) targetBtn.classList.add('active');
+
+    // Switch content
+    const graphicsTab = document.getElementById('galleryGraphicsTab');
+    const codingTab = document.getElementById('galleryCodingTab');
+    if (graphicsTab) graphicsTab.classList.toggle('active', tab === 'graphics');
+    if (codingTab) codingTab.classList.toggle('active', tab === 'coding');
 }
 
 // ===== Portfolio Likes Logic =====
@@ -602,6 +705,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileMenuClose();
     initRippleEffect();
     initRoleTyping();
+
+    // Render coding projects grids
+    renderCodingProjects('codingGrid');
+    renderCodingProjects('galleryCodingGrid');
 
     // Review Modal Event Listeners
     const revModal = document.getElementById('reviewModal');

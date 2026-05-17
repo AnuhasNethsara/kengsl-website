@@ -104,7 +104,7 @@
                 <li><a href="index.html#home">Home</a></li>
                 <li><a href="index.html#about">About</a></li>
                 <li><a href="index.html#services">Services</a></li>
-                <li><a href="index.html#work">Portfolio</a></li>
+                <li><a href="index.html#projects">Projects</a></li>
                 <li><a href="index.html#contact">Contact</a></li>
                 <li><a href="portfolio.html" class="active btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">Gallery</a></li>
             </ul>
@@ -117,35 +117,67 @@
     <!-- Page Header -->
     <section class="section" style="padding-bottom: 0; padding-top: 150px; text-align: center;">
         <div class="container animate-on-scroll">
-            <h1 class="section-title">My <span class="text-gradient">Design Gallery</span></h1>
-            <p class="section-subtitle" style="max-width: 600px; margin: 0 auto;">A curated collection of my best work covering YouTube thumbnails, branding, and high-impact social media promotional designs.</p>
+            <h1 class="section-title">My <span class="text-gradient">Projects Gallery</span></h1>
+            <p class="section-subtitle" style="max-width: 600px; margin: 0 auto;">A curated collection of my best work spanning graphic design, web development, and coding projects.</p>
         </div>
     </section>
 
-    <!-- Filters -->
-    <div class="filter-container animate-on-scroll delay-1">
+    <!-- Parent Tabs -->
+    <div style="padding: 30px 0 0; text-align: center;" class="animate-on-scroll">
         <div class="container">
-            <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="all">All Work</button>
-                <button class="filter-btn" data-filter="thumbnail">YouTube Thumbnails</button>
-                <button class="filter-btn" data-filter="promotion">Promotional</button>
-                <button class="filter-btn" data-filter="social">Social Media</button>
+            <div class="projects-tabs" id="galleryProjectsTabs">
+                <button class="projects-tab active" data-project-tab="graphics" onclick="switchGalleryTab('graphics')">
+                    <i class="fas fa-paint-brush"></i> Graphic Designs
+                </button>
+                <button class="projects-tab" data-project-tab="coding" onclick="switchGalleryTab('coding')">
+                    <i class="fas fa-code"></i> Coding & Development
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Gallery Grid -->
-    <main class="container" style="min-height: 50vh;">
-        <div class="portfolio-grid" id="portfolioGrid">
-            <!-- Rendered by script.js -->
+    <!-- Graphic Designs Tab Content -->
+    <div class="tab-content active" id="galleryGraphicsTab">
+        <!-- Filters -->
+        <div class="filter-container animate-on-scroll delay-1">
+            <div class="container">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All Work</button>
+                    <button class="filter-btn" data-filter="thumbnail">YouTube Thumbnails</button>
+                    <button class="filter-btn" data-filter="promotion">Promotional</button>
+                    <button class="filter-btn" data-filter="social">Social Media</button>
+                </div>
+            </div>
         </div>
 
-        <div class="cta-banner animate-on-scroll">
-            <h2 class="section-title" style="font-size: 2rem;">Ready to boost your clicks?</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 30px;">Let's create thumbnails and designs that get results.</p>
-            <a href="index.html#contact" class="btn btn-primary">Start a Project</a>
-        </div>
-    </main>
+        <!-- Gallery Grid -->
+        <main class="container" style="min-height: 50vh;">
+            <div class="portfolio-grid" id="portfolioGrid">
+                <!-- Rendered by script.js -->
+            </div>
+
+            <div class="cta-banner animate-on-scroll">
+                <h2 class="section-title" style="font-size: 2rem;">Ready to boost your clicks?</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 30px;">Let's create thumbnails and designs that get results.</p>
+                <a href="index.html#contact" class="btn btn-primary">Start a Project</a>
+            </div>
+        </main>
+    </div>
+
+    <!-- Coding & Development Tab Content -->
+    <div class="tab-content" id="galleryCodingTab">
+        <main class="container" style="min-height: 50vh; padding-top: 40px;">
+            <div class="projects-grid" id="galleryCodingGrid">
+                <!-- Rendered by script.js -->
+            </div>
+
+            <div class="cta-banner animate-on-scroll">
+                <h2 class="section-title" style="font-size: 2rem;">Need a custom web solution?</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 30px;">Let's build something amazing together.</p>
+                <a href="index.html#contact" class="btn btn-primary">Start a Project</a>
+            </div>
+        </main>
+    </div>
 
     <footer>
         <div class="container">

@@ -206,12 +206,14 @@
                 <div class="stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Portfolio Items</div></div>
                 <div class="stat-card"><div class="stat-value" id="statThumbnails">0</div><div class="stat-label">Thumbnails</div></div>
                 <div class="stat-card"><div class="stat-value" id="statPromo">0</div><div class="stat-label">Promo / Social</div></div>
+                <div class="stat-card"><div class="stat-value" id="statCoding">0</div><div class="stat-label">Coding Projects</div></div>
                 <div class="stat-card"><div class="stat-value" id="statTestimonials">0</div><div class="stat-label">Testimonials</div></div>
             </div>
 
             <!-- Tabs -->
             <div class="tab-bar">
                 <button class="admin-tab active" data-tab="portfolio" onclick="switchTab('portfolio')"><i class="fas fa-images"></i>&nbsp; Portfolio</button>
+                <button class="admin-tab" data-tab="coding" onclick="switchTab('coding')"><i class="fas fa-code"></i>&nbsp; Coding Projects</button>
                 <button class="admin-tab" data-tab="testimonials" onclick="switchTab('testimonials')"><i class="fas fa-quote-right"></i>&nbsp; Testimonials</button>
                 <button class="admin-tab" data-tab="profile" onclick="switchTab('profile')"><i class="fas fa-user-cog"></i>&nbsp; Profile</button>
                 <button class="admin-tab" data-tab="users" onclick="switchTab('users')" style="display:none;"><i class="fas fa-users"></i>&nbsp; Users</button>
@@ -220,10 +222,21 @@
             <!-- Portfolio Content -->
             <div id="portfolioContent">
                 <div class="section-bar">
-                    <h2 style="font-size:1.3rem">Portfolio Items</h2>
-                    <button class="btn btn-primary" style="padding:10px 24px;font-size:.9rem" onclick="openAddPortfolio()"><i class="fas fa-plus"></i> Add Item</button>
+                    <h2 style="font-size:1.3rem">Graphic Design Portfolio</h2>
+                    <button class="btn btn-primary" style="padding:10px 24px;font-size:.9rem" onclick="openAddPortfolio()"><i class="fas fa-plus"></i> Add Design</button>
                 </div>
                 <div class="admin-grid" id="adminPortfolioGrid">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading...</h3></div>
+                </div>
+            </div>
+
+            <!-- Coding Projects Content -->
+            <div id="codingContent" style="display:none">
+                <div class="section-bar">
+                    <h2 style="font-size:1.3rem">Coding & Development Projects</h2>
+                    <button class="btn btn-primary" style="padding:10px 24px;font-size:.9rem" onclick="openAddCodingProject()"><i class="fas fa-plus"></i> Add Project</button>
+                </div>
+                <div class="admin-grid" id="adminCodingGrid">
                     <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading...</h3></div>
                 </div>
             </div>
@@ -377,6 +390,63 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> Save Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Coding Project Modal -->
+    <div class="modal-overlay" id="codingModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="codingModalTitle">Add Coding Project</h2>
+                <button class="modal-close-btn" onclick="closeModal('codingModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="codingForm" onsubmit="saveCodingProject(event)">
+                <div class="form-group"><label class="form-label">Project Title *</label><input type="text" name="cTitle" class="form-input" placeholder="e.g. ShiftLK Network Platform" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Category *</label>
+                        <select name="cCategory" class="form-input" required>
+                            <option value="web_dev">Web Development</option>
+                            <option value="software">Desktop / Mobile App</option>
+                            <option value="coding">Script / Tool</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Display Name</label><input type="text" name="cCategoryDisplay" class="form-input" placeholder="e.g. Full-Stack Web App"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Description</label><textarea name="cDescription" class="form-input" placeholder="What does this project do..." style="min-height:80px"></textarea></div>
+                <div class="form-group"><label class="form-label">Tech Stack (comma separated)</label><input type="text" name="cTechStack" class="form-input" placeholder="e.g. Next.js, Tailwind CSS, Firebase, Supabase"></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Live Demo URL</label><input type="url" name="cProjectUrl" class="form-input" placeholder="https://..."></div>
+                    <div class="form-group"><label class="form-label">GitHub URL</label><input type="url" name="cGithubUrl" class="form-input" placeholder="https://github.com/..."></div>
+                </div>
+
+                <!-- Image Upload -->
+                <div class="form-group">
+                    <label class="form-label">Screenshot / Preview Image *</label>
+                    <div class="upload-zone" id="codingUploadDropZone" onclick="document.getElementById('codingImageInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click or drag & drop an image</p>
+                        <p style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Auto-compressed to WebP</p>
+                    </div>
+                    <input type="file" id="codingImageInput" accept="image/*" style="display:none" onchange="handleCodingImageUpload(this)">
+                    <div class="quality-row">
+                        <label>Quality:</label>
+                        <input type="range" class="quality-slider" id="codingQualitySlider" min="0.3" max="0.95" step="0.05" value="0.75" oninput="document.getElementById('codingQualityVal').textContent=Math.round(this.value*100)+'%'" onchange="recompressCodingImage()">
+                        <span class="quality-val" id="codingQualityVal">75%</span>
+                        <button type="button" class="action-btn edit-btn" onclick="recompressCodingImage()" title="Re-compress" style="width:32px;height:32px"><i class="fas fa-sync-alt" style="font-size:.75rem"></i></button>
+                    </div>
+                    <div class="compression-bar" id="codingCompressionInfo" style="display:none">
+                        <i class="fas fa-check-circle"></i>
+                        <span><strong id="codingOriginalSize">-</strong> → <strong id="codingCompressedSize">-</strong></span>
+                        <span class="sep">|</span>
+                        <span id="codingCompressionFormat">WebP</span>
+                        <span class="sep">|</span>
+                        <span id="codingCompressionSavings">-</span>
+                    </div>
+                    <div id="codingImagePreviewArea"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> Save Project</button>
             </form>
         </div>
     </div>

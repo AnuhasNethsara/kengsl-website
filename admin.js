@@ -3,10 +3,12 @@
 // ============================================================
 
 let currentEditId = null;
-let currentEditType = null; // 'portfolio' or 'testimonial'
+let currentEditType = null; // 'portfolio', 'testimonial', or 'codingProject'
 let currentImageBase64 = null;
+let currentCodingImageBase64 = null;
 let portfolioItems = [];
 let testimonialItems = [];
+let codingItems = [];
 let isPrimaryAdmin = false;
 let adminUsers = [];
 
@@ -94,6 +96,7 @@ function showDashboard(user) {
     loadPortfolioItems();
     loadTestimonials();
     loadPendingTestimonials();
+    loadCodingProjects();
     loadProfileSettings();
     if (isPrimaryAdmin) loadAdminUsers();
 }
@@ -112,6 +115,8 @@ function switchTab(tab) {
     if (targetTab) targetTab.classList.add('active');
 
     document.getElementById('portfolioContent').style.display = tab === 'portfolio' ? 'block' : 'none';
+    const codingContent = document.getElementById('codingContent');
+    if (codingContent) codingContent.style.display = tab === 'coding' ? 'block' : 'none';
     document.getElementById('testimonialsContent').style.display = tab === 'testimonials' ? 'block' : 'none';
     const profileContent = document.getElementById('profileContent');
     if (profileContent) profileContent.style.display = tab === 'profile' ? 'block' : 'none';
@@ -376,9 +381,10 @@ async function executeDelete() {
     btn.disabled = true;
 
     try {
-        const collection = currentEditType === 'portfolio' ? 'portfolio' : 'testimonials';
+        const collection = currentEditType === 'portfolio' ? 'portfolio' : currentEditType === 'codingProject' ? 'codingProjects' : 'testimonials';
+        const label = currentEditType === 'portfolio' ? 'Portfolio item' : currentEditType === 'codingProject' ? 'Coding project' : 'Testimonial';
         await db.collection(collection).doc(currentEditId).delete();
-        showToast(`${currentEditType === 'portfolio' ? 'Portfolio item' : 'Testimonial'} deleted!`, 'success');
+        showToast(`${label} deleted!`, 'success');
         closeModal('deleteModal');
     } catch (err) {
         showToast('Error: ' + err.message, 'error');
@@ -388,6 +394,204 @@ async function executeDelete() {
     btn.disabled = false;
     currentEditId = null;
     currentEditType = null;
+}
+
+// ===== CODING PROJECTS CRUD =====
+function loadCodingProjects() {
+    db.collection('codingProjects').orderBy('order', 'asc').onSnapshot(snapshot => {
+        codingItems = [];
+        snapshot.forEach(doc => codingItems.push({ id: doc.id, ...doc.data() }));
+        renderCodingGrid(codingItems);
+        updateStats();
+    }, err => {
+        showToast('Error loading coding projects: ' + err.message, 'error');
+    });
+}
+
+function renderCodingGrid(items) {
+    const grid = document.getElementById('adminCodingGrid');
+    if (!grid) return;
+
+    if (items.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-code"></i>
+                <h3>No coding projects yet</h3>
+                <p>Add your first development project</p>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = items.map(item => {
+        const techHtml = (item.techStack || []).map(t => `<span style="display:inline-block;padding:2px 10px;background:rgba(97,218,251,0.1);border:1px solid rgba(97,218,251,0.2);border-radius:50px;font-size:.7rem;color:#61dafb;font-weight:600;margin-right:4px;margin-bottom:4px">${escapeHTML(t)}</span>`).join('');
+        return `
+        <div class="admin-card" data-id="${item.id}">
+            <div class="admin-card-img">
+                <img src="${item.image || 'https://placehold.co/600x400/141419/61dafb?text=Project'}" 
+                     alt="${escapeHTML(item.title)}" loading="lazy"
+                     onerror="this.src='https://placehold.co/600x400/141419/61dafb?text=Error'">
+                <span class="admin-card-badge" style="background:rgba(97,218,251,.85);color:#0a0a0f">${escapeHTML(item.categoryDisplay || item.category)}</span>
+            </div>
+            <div class="admin-card-body">
+                <h3>${escapeHTML(item.title)}</h3>
+                <p>${escapeHTML(item.description || '')}</p>
+                <div style="margin-top:8px">${techHtml}</div>
+            </div>
+            <div class="admin-card-actions">
+                <button class="action-btn edit-btn" onclick="openEditCodingProject('${item.id}')" title="Edit">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="confirmDelete('${item.id}', 'codingProject')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    }).join('');
+}
+
+async function saveCodingProject(e) {
+    e.preventDefault();
+    const form = document.getElementById('codingForm');
+    const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const techStackRaw = form.cTechStack.value.trim();
+    const techStack = techStackRaw ? techStackRaw.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+
+    const data = {
+        title: form.cTitle.value.trim(),
+        category: form.cCategory.value,
+        categoryDisplay: form.cCategoryDisplay.value.trim(),
+        description: form.cDescription.value.trim(),
+        techStack: techStack,
+        projectUrl: form.cProjectUrl.value.trim(),
+        githubUrl: form.cGithubUrl.value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (currentCodingImageBase64) {
+        data.image = currentCodingImageBase64;
+    }
+
+    try {
+        if (currentEditId) {
+            await db.collection('codingProjects').doc(currentEditId).update(data);
+            showToast('Coding project updated!', 'success');
+        } else {
+            data.order = codingItems.length + 1;
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            if (!currentCodingImageBase64) {
+                showToast('Please upload a screenshot', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+            await db.collection('codingProjects').add(data);
+            showToast('Coding project added!', 'success');
+        }
+        closeModal('codingModal');
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
+function openAddCodingProject() {
+    currentEditId = null;
+    currentCodingImageBase64 = null;
+    document.getElementById('codingModalTitle').textContent = 'Add Coding Project';
+    document.getElementById('codingForm').reset();
+    document.getElementById('codingImagePreviewArea').innerHTML = '';
+    document.getElementById('codingCompressionInfo').style.display = 'none';
+    openModal('codingModal');
+}
+
+function openEditCodingProject(id) {
+    const item = codingItems.find(i => i.id === id);
+    if (!item) return;
+
+    currentEditId = id;
+    currentCodingImageBase64 = item.image || null;
+
+    document.getElementById('codingModalTitle').textContent = 'Edit Coding Project';
+    const form = document.getElementById('codingForm');
+    form.cTitle.value = item.title || '';
+    form.cCategory.value = item.category || 'web_dev';
+    form.cCategoryDisplay.value = item.categoryDisplay || '';
+    form.cDescription.value = item.description || '';
+    form.cTechStack.value = (item.techStack || []).join(', ');
+    form.cProjectUrl.value = item.projectUrl || '';
+    form.cGithubUrl.value = item.githubUrl || '';
+
+    const previewArea = document.getElementById('codingImagePreviewArea');
+    if (item.image) {
+        previewArea.innerHTML = `<img src="${item.image}" alt="Current image" class="image-preview">`;
+    } else {
+        previewArea.innerHTML = '';
+    }
+    document.getElementById('codingCompressionInfo').style.display = 'none';
+
+    openModal('codingModal');
+}
+
+// Coding image upload handlers
+async function handleCodingImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error');
+        return;
+    }
+
+    const qualitySlider = document.getElementById('codingQualitySlider');
+    const quality = parseFloat(qualitySlider.value);
+    const previewArea = document.getElementById('codingImagePreviewArea');
+    const compressionInfo = document.getElementById('codingCompressionInfo');
+
+    previewArea.innerHTML = '<div class="compress-loading"><i class="fas fa-spinner fa-spin"></i> Compressing...</div>';
+    compressionInfo.style.display = 'none';
+
+    try {
+        const result = await compressToWebP(file, quality);
+        if (result.compressedSize > 900000) {
+            const lowerResult = await compressToWebP(file, 0.5, 1000);
+            if (lowerResult.compressedSize > 900000) {
+                showToast('Image too large even after compression. Use a smaller image.', 'error');
+                previewArea.innerHTML = '';
+                return;
+            }
+            Object.assign(result, lowerResult);
+        }
+
+        currentCodingImageBase64 = result.base64;
+        previewArea.innerHTML = `<img src="${result.base64}" alt="Preview" class="image-preview">`;
+
+        compressionInfo.style.display = 'flex';
+        document.getElementById('codingOriginalSize').textContent = formatBytes(result.originalSize);
+        document.getElementById('codingCompressedSize').textContent = formatBytes(result.compressedSize);
+        document.getElementById('codingCompressionFormat').textContent = result.format;
+        const savings = Math.round((1 - result.compressedSize / result.originalSize) * 100);
+        document.getElementById('codingCompressionSavings').textContent = savings + '% smaller';
+    } catch (err) {
+        showToast('Compression error: ' + err.message, 'error');
+        previewArea.innerHTML = '';
+    }
+}
+
+async function recompressCodingImage() {
+    const input = document.getElementById('codingImageInput');
+    if (input.files && input.files[0]) {
+        await handleCodingImageUpload(input);
+    } else if (currentCodingImageBase64) {
+        showToast('Please upload the original image again to change its quality.', 'error');
+    } else {
+        showToast('Please upload an image first.', 'error');
+    }
 }
 
 // ===== IMAGE COMPRESSION (WebP) =====
@@ -513,6 +717,10 @@ function closeModal(id) {
         currentEditId = null;
         currentImageBase64 = null;
     }
+    if (id === 'codingModal') {
+        currentEditId = null;
+        currentCodingImageBase64 = null;
+    }
     if (id === 'testimonialModal') {
         currentEditId = null;
     }
@@ -523,11 +731,13 @@ function updateStats() {
     const totalEl = document.getElementById('statTotal');
     const thumbEl = document.getElementById('statThumbnails');
     const promoEl = document.getElementById('statPromo');
+    const codingEl = document.getElementById('statCoding');
     const testiEl = document.getElementById('statTestimonials');
 
     if (totalEl) totalEl.textContent = portfolioItems.length;
     if (thumbEl) thumbEl.textContent = portfolioItems.filter(i => i.category === 'thumbnail').length;
     if (promoEl) promoEl.textContent = portfolioItems.filter(i => i.category === 'promotion' || i.category === 'social').length;
+    if (codingEl) codingEl.textContent = codingItems.length;
     if (testiEl) testiEl.textContent = testimonialItems.length;
 }
 
@@ -589,6 +799,36 @@ function initDragDrop() {
             dt.items.add(file);
             input.files = dt.files;
             handleImageUpload(input);
+        }
+    });
+}
+
+function initCodingDragDrop() {
+    const dropZone = document.getElementById('codingUploadDropZone');
+    if (!dropZone) return;
+
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+    });
+
+    dropZone.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const input = document.getElementById('codingImageInput');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            handleCodingImageUpload(input);
         }
     });
 }
@@ -731,6 +971,7 @@ async function searchAndGrantByEmail() {
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     initDragDrop();
+    initCodingDragDrop();
 
     // Close modals on backdrop click
     document.querySelectorAll('.modal-overlay').forEach(modal => {
