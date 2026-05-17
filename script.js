@@ -334,6 +334,26 @@ function initRippleEffect() {
     });
 }
 
+// ===== Role Text Typing Animation =====
+function initRoleTyping() {
+    const roles = ["Graphic Designer", "Netch Engineer", "Web Developer", "Content Creator"];
+    const roleTextEl = document.getElementById('role-text');
+    if (!roleTextEl) return;
+    
+    let currentRoleIndex = 0;
+    
+    // Cycle the role every 3 seconds (sync with the CSS animation)
+    setInterval(() => {
+        currentRoleIndex = (currentRoleIndex + 1) % roles.length;
+        roleTextEl.textContent = roles[currentRoleIndex];
+        
+        // Re-trigger the CSS animation
+        roleTextEl.style.animation = 'none';
+        roleTextEl.offsetHeight; /* trigger reflow */
+        roleTextEl.style.animation = null; 
+    }, 3000);
+}
+
 // ===== Single DOMContentLoaded — All Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
     // Page entrance animation
@@ -361,4 +381,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavScroll();
     initMobileMenuClose();
     initRippleEffect();
+    initRoleTyping();
 });
