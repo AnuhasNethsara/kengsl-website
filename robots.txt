@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /portfolio.html
+Allow: /assets/
+Disallow: /admin.html
+Disallow: /admin.js
+Disallow: /migrate.html
+
+Sitemap: https://kengsl.indevs.in/sitemap.xml
