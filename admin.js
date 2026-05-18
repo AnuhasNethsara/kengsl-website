@@ -369,6 +369,100 @@ function openEditTestimonial(id) {
     openModal('testimonialModal');
 }
 
+// ===== PENDING TESTIMONIALS CRUD =====
+let pendingTestimonialsList = [];
+
+function loadPendingTestimonials() {
+    db.collection('pendingTestimonials').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        pendingTestimonialsList = [];
+        snapshot.forEach(doc => pendingTestimonialsList.push({ id: doc.id, ...doc.data() }));
+        renderPendingTestimonialsList();
+    }, err => {
+        showToast('Error loading pending testimonials: ' + err.message, 'error');
+    });
+}
+
+function renderPendingTestimonialsList() {
+    const list = document.getElementById('adminPendingTestimonialsList');
+    const countEl = document.getElementById('pendingTestimonialsCount');
+    if (countEl) countEl.textContent = pendingTestimonialsList.length;
+
+    if (!list) return;
+
+    if (pendingTestimonialsList.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state" style="padding: 20px 0; text-align: center;">
+                <i class="fas fa-quote-right" style="color:var(--text-muted); font-size: 2rem; margin-bottom: 8px;"></i>
+                <h3 style="font-size: 1rem; color: var(--text-secondary);">No pending reviews</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">New client reviews will appear here for approval</p>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = pendingTestimonialsList.map(item => `
+        <div class="testimonial-row" style="margin-bottom: 12px; padding: 12px; border: 1px solid var(--editor-border); border-radius: 8px;">
+            <div class="testimonial-row-content">
+                <div class="testimonial-row-avatar" style="background:linear-gradient(135deg,#8b5cf6,#ec4899); color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                    ${escapeHTML((item.authorName || 'A')[0].toUpperCase())}
+                </div>
+                <div class="testimonial-row-info" style="flex: 1; margin-left: 12px;">
+                    <h4 style="margin: 0; font-size: 0.95rem;">${escapeHTML(item.authorName)}</h4>
+                    <p class="testimonial-row-role" style="margin: 2px 0; font-size: 0.8rem; color: var(--text-muted);">${escapeHTML(item.authorRole || 'Client')}</p>
+                    <p class="testimonial-row-quote" style="margin: 6px 0; font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">"${escapeHTML(item.quote)}"</p>
+                    <div class="testimonial-row-stars" style="color: #f59e0b; font-size: 0.8rem;">
+                        ${'<i class="fas fa-star"></i>'.repeat(item.rating || 5)}
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-row-actions" style="display: flex; gap: 8px;">
+                <button class="action-btn edit-btn" onclick="approveTestimonial('${item.id}')" title="Approve Review" style="border-color:#10b981; color:#10b981">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="rejectTestimonial('${item.id}')" title="Reject Review">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function approveTestimonial(id) {
+    const item = pendingTestimonialsList.find(t => t.id === id);
+    if (!item) return;
+
+    try {
+        // 1. Get current count in testimonials to assign order
+        const snap = await db.collection('testimonials').get();
+        const nextOrder = snap.size + 1;
+
+        // 2. Add to active testimonials
+        await db.collection('testimonials').add({
+            authorName: item.authorName,
+            authorRole: item.authorRole || '',
+            quote: item.quote,
+            rating: item.rating || 5,
+            order: nextOrder,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 3. Delete from pendingTestimonials
+        await db.collection('pendingTestimonials').doc(id).delete();
+        showToast('Review approved and published!', 'success');
+    } catch (err) {
+        showToast('Error approving: ' + err.message, 'error');
+    }
+}
+
+async function rejectTestimonial(id) {
+    if (!confirm('Reject and delete this review?')) return;
+    try {
+        await db.collection('pendingTestimonials').doc(id).delete();
+        showToast('Review rejected and deleted.', 'success');
+    } catch (err) {
+        showToast('Error rejecting: ' + err.message, 'error');
+    }
+}
+
 // ===== DELETE =====
 function confirmDelete(id, type) {
     currentEditId = id;
