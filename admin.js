@@ -838,6 +838,124 @@ function initCodingDragDrop() {
     });
 }
 
+// ===== SERVICES CRUD =====
+function loadServices() {
+    db.collection('services').orderBy('order', 'asc').onSnapshot(snapshot => {
+        serviceItems = [];
+        snapshot.forEach(doc => serviceItems.push({ id: doc.id, ...doc.data() }));
+        renderServicesGrid(serviceItems);
+        updateStats();
+    }, err => {
+        showToast('Error loading services: ' + err.message, 'error');
+    });
+}
+
+function renderServicesGrid(items) {
+    const grid = document.getElementById('adminServicesGrid');
+    if (!grid) return;
+
+    if (items.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-holding-heart"></i>
+                <h3>No services yet</h3>
+                <p>Add your first service card to get started</p>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = items.map(item => `
+        <div class="admin-card" data-id="${item.id}">
+            <div class="admin-card-body">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: ${item.iconBg || 'rgba(139,92,246,0.1)'}; color: ${item.iconColor || 'var(--accent-1)'}; font-size: 1.2rem;">
+                        <i class="${item.icon || 'fas fa-cog'}"></i>
+                    </div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">${escapeHTML(item.title)}</h3>
+                </div>
+                <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHTML(item.description || '')}</p>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    <strong>Link Text:</strong> ${escapeHTML(item.linkText || 'None')} <br>
+                    <strong>Link URL:</strong> ${escapeHTML(item.linkUrl || 'None')}
+                </div>
+            </div>
+            <div class="admin-card-actions">
+                <button class="action-btn edit-btn" onclick="openEditService('${item.id}')" title="Edit">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="confirmDelete('${item.id}', 'service')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function saveServiceItem(e) {
+    e.preventDefault();
+    const form = document.getElementById('serviceForm');
+    const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    const data = {
+        title: form.sTitle.value.trim(),
+        description: form.sDescription.value.trim(),
+        icon: form.sIcon.value.trim() || 'fas fa-cog',
+        iconColor: form.sIconColor.value.trim() || '#8b5cf6',
+        iconBg: form.sIconBg.value.trim() || 'rgba(139,92,246,0.1)',
+        linkColor: form.sLinkColor.value.trim() || '#8b5cf6',
+        linkUrl: form.sLinkUrl.value.trim(),
+        linkText: form.sLinkText.value.trim(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if (currentEditId) {
+            await db.collection('services').doc(currentEditId).update(data);
+            showToast('Service updated!', 'success');
+        } else {
+            data.order = serviceItems.length + 1;
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('services').add(data);
+            showToast('Service added!', 'success');
+        }
+        closeModal('serviceModal');
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
+function openAddService() {
+    currentEditId = null;
+    document.getElementById('serviceModalTitle').textContent = 'Add Service';
+    document.getElementById('serviceForm').reset();
+    openModal('serviceModal');
+}
+
+function openEditService(id) {
+    const item = serviceItems.find(i => i.id === id);
+    if (!item) return;
+
+    currentEditId = id;
+    document.getElementById('serviceModalTitle').textContent = 'Edit Service';
+    const form = document.getElementById('serviceForm');
+    form.sTitle.value = item.title || '';
+    form.sDescription.value = item.description || '';
+    form.sIcon.value = item.icon || 'fas fa-cog';
+    form.sIconColor.value = item.iconColor || '';
+    form.sIconBg.value = item.iconBg || '';
+    form.sLinkColor.value = item.linkColor || '';
+    form.sLinkUrl.value = item.linkUrl || '';
+    form.sLinkText.value = item.linkText || '';
+
+    openModal('serviceModal');
+}
+
 // ===== USER MANAGEMENT (Primary Admin Only) =====
 function loadAdminUsers() {
     // Load granted admins

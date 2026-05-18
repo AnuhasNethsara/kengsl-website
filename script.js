@@ -863,10 +863,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Auto-listen to auth state changes to set reviewUser instantly
+    // Auto-listen to auth state changes to set reviewUser instantly and boot visual editor if admin
     if (window.auth) {
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             reviewUser = user;
+            if (user) {
+                try {
+                    const adminDoc = await db.collection('settings').doc('admin').get();
+                    let isAdmin = false;
+                    if (adminDoc.exists && adminDoc.data().uid === user.uid) {
+                        isAdmin = true;
+                    } else {
+                        const grantedDoc = await db.collection('admins').doc(user.uid).get();
+                        if (grantedDoc.exists) isAdmin = true;
+                    }
+
+                    if (isAdmin) {
+                        console.log("Admin detected. Injecting visual page builder controls...");
+                        initVisualEditorBootstrapper();
+                    }
+                } catch (e) {
+                    console.error("Error verifying admin status:", e);
+                }
+            }
         });
     }
 
@@ -875,3 +894,115 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.db) fetchSiteConfig();
     }, 100);
 });
+
+// ===== DYNAMIC VISUAL PAGE BUILDER INJECTOR =====
+function initVisualEditorBootstrapper() {
+    if (document.getElementById('editor-bootstrapper')) return;
+
+    // Create the floating bubble button
+    const btn = document.createElement('button');
+    btn.id = 'editor-bootstrapper';
+    btn.innerHTML = '<i class="fas fa-edit"></i><span>Edit Page</span>';
+    btn.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        z-index: 9999;
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 24px;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(255,255,255,0.1) inset;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    `;
+
+    // Add CSS animations dynamically for the button
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+        #editor-bootstrapper:hover {
+            transform: scale(1.08) translateY(-3px);
+            box-shadow: 0 12px 35px rgba(139, 92, 246, 0.6), 0 0 15px rgba(236, 72, 153, 0.3);
+        }
+        #editor-bootstrapper span {
+            max-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        #editor-bootstrapper:hover span {
+            max-width: 100px;
+            opacity: 1;
+            margin-left: 4px;
+        }
+    `;
+    document.head.appendChild(styleSheet);
+    document.body.appendChild(btn);
+
+    const loadEditor = () => {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Loading Editor...</span>';
+        btn.disabled = true;
+
+        // Create cinematic transition overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: #0c0c0f;
+            z-index: 100000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            pointer-events: none;
+        `;
+        overlay.innerHTML = '<div style="text-align:center"><i class="fas fa-wand-magic-sparkles fa-spin" style="font-size:3rem; margin-bottom:16px; color:#8b5cf6"></i><br>Entering Live Designer Mode</div>';
+        document.body.appendChild(overlay);
+
+        // Fade in
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+        }, 10);
+
+        setTimeout(() => {
+            // Load editor.css
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'editor.css';
+            link.id = 'editor-styles';
+            document.head.appendChild(link);
+
+            // Load editor.js
+            const script = document.createElement('script');
+            script.src = 'editor.js';
+            script.id = 'editor-script';
+            script.onload = () => {
+                btn.remove();
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.remove(), 500);
+                }, 800);
+            };
+            document.body.appendChild(script);
+        }, 600);
+    };
+
+    btn.addEventListener('click', loadEditor);
+
+    // Auto load editor if ?edit=true or if redirected from admin
+    if (new URLSearchParams(window.location.search).get('edit') === 'true') {
+        loadEditor();
+    }
+}
